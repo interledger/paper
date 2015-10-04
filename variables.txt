@@ -1,13 +1,13 @@
-C set of connectors
-c_j individual connector
-L set of ledgers
-l_i individual ledger
-n the number of ledgers
-n-1 the number of connectors
+n the number of participants
 P set of participants
-p individual participant
-s sender
-r recipient
+p_i individual participant
+p_1 sender
+p_n recipient
+p_i individual connector
+C set of connectors
+L set of ledgers
+n-1 number of ledgers
+l_i individual ledger
 B set of book transfers
 b_i individual book transfer
 E set of escrow conditions
@@ -20,6 +20,9 @@ n_k individual notary
 \textsc{abort} notary abort message
 
 t_i timeout for a specific transfer
-\delta t^{msg}_i messaging delay for a specific connector
+M bound on messaging delay
+M(_, _) messaging delay for a specific pair of processes
+K bound on clock skew
+K(_, _) max clock skew for a specific pair of processes
 \delta t^{clk}_i clock skew for a specific connector
 o_i option price (fee) a specific transfer
