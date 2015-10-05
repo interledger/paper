@@ -20,9 +20,7 @@
 % usepackage command, below.
 
 \documentclass[letterpaper,twocolumn,10pt]{article}
-\usepackage{usenix,epsfig,endnotes,parskip,amsmath,amssymb,stfloats,placeins,capt-of}
-
-\newtheorem{theorem}{Theorem}
+\usepackage{usenix,epsfig,endnotes,parskip,amsmath,amssymb,stfloats,placeins,capt-of,subfiles,color,latexsym,ifthen}
 
 \begin{document}
 
@@ -45,7 +43,7 @@
 
 \section*{Abstract}
 
-We present a protocol for payments across payment systems. Unlike previous approaches, this requires no global coordinating system or blockchain. It allows anyone with accounts on two or more \textit{ledgers} to make connections between them. \textit{Connectors} can be composed, creating a global graph of liquidity or \mbox{\textit{interledger}}.
+We present a protocol for payments across payment systems. Unlike previous approaches, this requires no global coordinating system or blockchain. It allows anyone with accounts on two or more \textit{ledgers} to make connections between them. \textit{Connectors} can be composed, creating a global graph of liquidity or \mbox{\textit{Interledger}}.
 % TODO should we capitalize Interledger?
 
 
@@ -53,7 +51,7 @@ We present a protocol for payments across payment systems. Unlike previous appro
 
 % TODO talk more about scalability
 
-Sending money today within any single payment system or \textit{ledger} is relatively simple, fast and inexpensive. However, moving money between systems is cumbersome, slow and costly, if it is possible at all. Any new or smaller payment system struggles to provide a useful experience for its users as they are limited to transacting with others who already hold accounts on the same system.
+Sending money today within any single payment system or \textit{ledger} is relatively simple, fast and inexpensive. However, moving money between systems is cumbersome, slow and costly, if it is possible at all. Any new or smaller payment system struggles to build network effects and provide a useful experience for its users, as they are limited to transacting with others who already hold accounts on the same system.
 
 There are few connections between ledgers because the sender of a payment must trust the intermediaries not to walk away with the money. This presents a high barrier for creating new connections, and a select few trusted institutions are able to provide this function.
 
@@ -63,7 +61,7 @@ Lowering the barriers to creating more connections between the world's ledgers w
 
 In this paper, we present a protocol for \mbox{\textit{interledger}} payments that removes the need for the sender and recipient to trust the \textit{connectors} facilitating payments between their ledgers. It uses ledger-provided escrow to guarantee the sender of a payment will either have a non-repudiable receipt confirming that the recipient has been paid, or their escrowed funds will be returned. This allows anyone to create new connections between ledgers of all types.
 
-Unlike previous approaches \cite{davies1989security} \cite{Bitcoin}\cite{schwartz2014ripple}\cite{wood2014ethereum}\cite{mazieresstellar}\cite{back2014enabling}\cite{poonbitcoin}, the protocol does not rely on any global coordinating system or ledger, centralized or decentralized, for processing payments.
+Unlike previous approaches \cite{davies1989security} \cite{Bitcoin}\cite{schwartz2014ripple}\cite{wood2014ethereum}\cite{mazieresstellar}\cite{back2014enabling}\cite{poonbitcoin}, the protocol does not rely on any global coordinating system or ledger, centralized or decentralized, for processing payments. There is no shared global state, so it can scale to facilitate any volume of payments.
 
 The protocol enables payments to be chained, giving all ledgers equal global reach. The ability to make frictionless cross-currency and "multi-hop" payments makes every item of value spendable anywhere---from fiat or cryptocurrencies, to commodities, loyalty points, computing resources and social credit.
 
@@ -122,13 +120,34 @@ As illustrated in Figure \ref{fig:parallel-path}, individual payments can take a
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\columnwidth]{figures/parallel-path.pdf}
-    \caption{Connector controls accounts on two ledgers}
+    \caption{Payment through two parallel connectors}
     \label{fig:parallel-path}
 \end{figure}
 
 The global financial system can be made more accessible, competitive and resilient by lowering the barriers to entry for new connectors.
 
+\subsection{Byzantine and Rational Actors}
+
+Existing protocols handle the risks of payments failing or money being lost or stolen either by requiring both sender and recipient to use the same ledger, or by restricting the connector function to highly trusted intermediaries. A more open protocol for interledger payments must be able to protect against potentially faulty or malicious behavior by any of the actors involved.
+
+The BAR (Byzantine, Altruistic, Rational) model introduced by \cite{aiyer2005bar} categorizes actors in algorithms involving cooperation between multiple independent parties. \textit{Altruistic} actors follow the protocol exactly. \textit{Rational} actors are self-interested and will follow or deviate from the protocol to maximize their short and long-term benefits. \textit{Byzantine} actors, originally introduced by \cite{lamport1982byzantine}, may deviate from the protocol for any reason, ranging from technical failure to deliberate attempts to harm other parties or simply impede the protocol.
+
+A protocol is Byzantine Altruistic Rational Tolerant (BART) if it ``guarantees the specified set of safety and liveness properties in the presence of all rational deviations from the protocol.''\cite[p. 2]{aiyer2005bar}
+
+For interledger payments, we assume all actors are either rational or Byzantine. Altruistic actors may speed up parts of the protocol, but they cannot be relied upon for safety or liveness. We assume that ledgers may be faulty and any combination of participants (the sender, recipient, or connectors) may conspire to obstruct the protocol or steal money from any of the other participants. 
+
+We assume that as rational actors, ledgers and connectors may require some fee to incentivize their participation in a payment. These fees may be paid in the flow of the payment, or out of band. In this paper, we will only discuss the details of fees necessary to mitigate risks and attacks specific to this algorithm.
+
+While ledgers may in practice exhibit Byzantine behavior, we do not attempt to protect the participants that directly hold accounts with such a ledger. A malicious ledger may arbitrarily change the balances of it's account holders, so this protocol can only attempt to isolate participants who hold accounts on non-faulty ledgers from risk.
+
+We assume that connectors will agree to participate in a payment only if they face negligible or manageable risk for doing so, and that they will charge fees accordingly. Connectors cannot be expected to deliver money on any destination ledger unless it is in their interest to do so.
+
+The senders and receivers of payments may attempt to overload, hobble or defraud any of the other actors involved.
+
+In the following sections we present a protocol for Byzantine Altruistic Rational Tolerant interledger payments. Section \ref{sec:atomic} presents the protocol using the Atomic execution mode, which provides atomicity while requiring some shared trust between the participants. Section \ref{sec:universal} presents the Universal execution mode, which requires no shared trust amongst the participants and uses participants' incentives to provide safety and liveness.
+
 \section{Atomic Interledger Payments}
+\label{sec:atomic}
 
 % Previous types of distributed financial systems such as \cite{Bitcoin} and \cite{Ripple}
 % %TODO add Ripple citation
@@ -138,15 +157,11 @@ The global financial system can be made more accessible, competitive and resilie
 
 % TODO mention that this is scalable because the notaries don't need to keep state
 
-% TODO could mention BAR https://www.cs.utexas.edu/~lorenzo/papers/sosp05.pdf - stronger than classic Byzantine
-
-Interledger payments consist of transfers on different ledgers. All participants in a payment want \textit{atomicity}---a guarantee that all of the component transfers will either execute or that all will be aborted---because they stand to lose money if the payment is partially executed. Furthermore, the sender wants non-repudiable proof that the recipient has been paid.
+Interledger payments consist of transfers on different ledgers. If the payment partially executes, at least one of the participants loses money. Thus, all correct participants in a payment want \textit{atomicity}---a guarantee that all of the component transfers will either execute or that all will be aborted. In addition, the sender wants non-repudiable proof that the recipient has been paid.
 
 Executing transfers atomically across multiple ledgers requires a \textit{transaction commit protocol}. The simplest such protocol is the Two-Phase Commit, in which all systems involved first indicate their readiness to complete the transaction, and then execute or abort based on whether all of the other systems have agreed. The basic form of that protocol uses a \textit{transaction manager} to collect the responses of the various system and disseminate the decision. Fault tolerance can be added to the Two-Phase Commit by replacing the single transaction manager with a group of coordinators that use a consensus algorithm to agree on the outcome of the payment. \cite{gray2006consensus}
 
-The Atomic execution mode of the interledger payment protocol uses a Byzantine fault-tolerant agreement algorithm amongst a group of \textit{notaries} to coordinate the preparation and then execution of the component transfers. It has the same safety and liveness properties as the consensus algorithm used amongst the notaries. Additionally, it guarantees that the sender receive a non-repudiable payment receipt from the recipient if funds are transferred.
-
-% TODO fix this diagram to use b instead of t for transfers
+The Atomic execution mode of the interledger payment protocol uses a Byzantine fault-tolerant agreement algorithm amongst an ad-hoc group of \textit{notaries} to coordinate the preparation and then execution of the component transfers. It has the same safety and liveness properties as the consensus algorithm used amongst the notaries. Additionally, it guarantees that the sender receive a non-repudiable payment receipt from the recipient if funds are transferred.
 
 \begin{figure*}[th!]
     \centering
@@ -155,20 +170,18 @@ The Atomic execution mode of the interledger payment protocol uses a Byzantine f
     \label{fig:n-bells}
 \end{figure*}
 
-
-Figure \ref{fig:n-bells} shows a payment through a chain of participants $P$ and ledgers $L$. There are $n$ participants in $P$ and the payment consists of $n-1$ book transfers $B$ on $n-1$ ledgers, such that $ \left\vert{P}\right\vert = n $ and $\left\vert{B}\right\vert = \left\vert{L}\right\vert = n-1 $. The first participant, the sender $p_1$, has an account on ledger $l_1$. The last participant, the recipient $p_n$, has an account on ledger $l_{n-1}$. The other participants $ \langle p_i | i \in \mathbb{Z}^+ : 1 < i < n \rangle $ in the chain are the connectors, which are referred to as $C$ for convenience. Each connector $p_i \in C$ has accounts on ledgers $l_{i-1}$ and $l_i$ and facilitates payments between them.
+Figure \ref{fig:n-bells} shows a payment through a chain of participants $P$ and ledgers $L$. There are $n$ participants in $P$ and the payment consists of $n-1$ book transfers $B$ on $n-1$ ledgers, such that $ \left\vert{P}\right\vert = n $ and $\left\vert{B}\right\vert = \left\vert{L}\right\vert = n-1 $. The first participant, the sender $p_1$, has an account on ledger $\ell_1$. The last participant, the recipient $p_n$, has an account on ledger $\ell_{n-1}$. The other participants $ \{ p_i \mid i \in \mathbb{Z}^+ \land 1 < i < n \} $ in the chain are the connectors, which are referred to as $C$ for convenience. Each connector $p_i \in C$ has accounts on ledgers $\ell_{i-1}$ and $\ell_i$ and facilitates payments between them.
 
 \subsection{Escrow}
 
-Escrow provides the financial equivalent of the phases in the Two-Phase Commit Protocol. \cite{Gray:1978:NDB:647433.723863}
+The main requirement for ledgers to enable interledger payments for their account holder is to provide functionality for escrowed transfers. Escrow provides the financial equivalent of the phases in the Two-Phase Commit Protocol. \cite{Gray:1978:NDB:647433.723863}
 
-Ledgers must support escrowed transfers to enable their account holders to safely participate in interledger payments. Each participant in a payment relies upon their ledger to escrow their funds and release them only when some conditions are met. This isolates each participant from the risks of failure or malicious behavior elsewhere in the payment chain.
+Escrow isolates each participant from the risks of failure or malicious behavior elsewhere in the payment chain. Each participant relies upon their ledger to escrow funds and release them only when some predefined conditions are met.
 
-A simple way for ledgers to securely validate the outcome of external events and enforce the escrow conditions is using cryptographic signatures. Any one-way function can be used.\cite{rompel1990one} Using asymmetric cryptography, the ledger escrows funds pending the presentation of a valid signature for a pre-defined public key and message or hash. The ledger can validate the signature and act accordingly.
+A simple way for ledgers to securely validate the outcome of the escrow conditions is using cryptographic signatures. Any one-way function can be used.\cite{rompel1990one} Using asymmetric cryptography, the ledger escrows funds pending the presentation of a valid signature for a pre-defined public key and message or hash. The ledger can validate the signature when it is received and act accordingly.
 
 Figure \ref{fig:transfer-states} illustrates the possible states of a transfer. When a transfer is first \textit{proposed}, the details of the transfer are shared with the participants, but no changes are made to the ledger. As soon as the affected account holders have authorized the transfer, the ledger checks that the funds are available and that all of its rules and policies have been satisfied. The ledger places the funds in escrow and the transfer is now \textit{prepared}. If the execution condition $e$ is fulfilled, the transfer is \textit{executed}. If any of the checks fail, or if an abort condition $e'$ is fulfilled, the transfer is \textit{aborted} and the escrowed funds are returned to their originator.
 
-% TODO replace "rejected" with "aborted" in this diagram
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\columnwidth]{figures/transfer-states.pdf}
@@ -181,15 +194,15 @@ Figure \ref{fig:transfer-states} illustrates the possible states of a transfer. 
 
 % TODO note that you're trusting the notaries not to sign both the commit and abort messages. any notary that has signed both is provably malicious or faulty
 
-Notaries in the Atomic mode serve as the source of truth regarding the success or failure of the payment. They take the place of the transaction manager in a basic Two-Phase Commit.
+Notaries in the Atomic mode serve as the source of truth regarding the success or failure of the payment. They take the place of the transaction manager in a basic Two-Phase Commit. Importantly, notaries are organized in ad-hoc groups for each payment and the protocol does not require one globally trusted set of notaries.
 
 All of the escrow conditions for all of the book transfers $B$ comprising the payment must depend on the notaries either signing an an \textsc{execute} or \textsc{abort} message. If the escrow conditions were based solely on a message from the notaries, however, faulty notaries could cause the transfers to execute before the final transfer to the recipient is \textit{prepared}. \cite{dolev1983authenticated}
 
-Notaries must only agree on the \textsc{execute} or \textsc{abort} messages if they have received a signed receipt, the \textsc{receipt-signature}, from the recipient before a timeout. The recipient's signature provides non-repudiable proof that they have been paid, and they can sign the receipt once the transfer into their account is \textit{prepared} pending their signature. 
+Notaries must only agree on the \textsc{execute} or \textsc{abort} messages if they have received a signed receipt, the \textsc{receipt-signature}, from the recipient $p_n$ before a timeout $t$. The recipient's signature provides non-repudiable proof that they have been paid. The recipient $p_n$ signs the receipt once the transfer into their account is \textit{prepared} and escrowed pending their signature.
 
 % TODO clean up this discussion about the receipt. Do we need a proof about why they're okay with signing the receipt? Or about the conditions being the same?
 
-The execution conditions $E$ for the transfers $B$ must depend on the \textsc{execute} message from the notaries and the \textsc{receipt-signature} from the recipient:
+To ensure all of the transfers $B$ can be executed atomically, all of the execution conditions $E$ must depend on the \textsc{execute} message from the notaries and the \textsc{receipt-signature} from the recipient:
 
 % TODO should we mention before this that the receipt should be pre-negotiated with the recipient?
 
@@ -197,7 +210,7 @@ The execution conditions $E$ for the transfers $B$ must depend on the \textsc{ex
 \forall e \in E : e = \textsc{receipt-signature} \land \textsc{execute}
 \end{equation}
 
-The abort conditions $E'$ for each transfer in $B$ are dependent only on the abort message \textsc{abort}. Receipt of a message fulfilling the abort condition $e'_i$ where $\{ i \in \mathbb{Z}^+ : i < n \}$ causes the ledger $l_i$ to immediately transition the \textit{proposed} or \textit{prepared} transfer $b_i$ to the \textit{aborted} state and release the funds to the originator.
+The abort conditions $E'$ for each transfer in $B$ are dependent only on the abort message \textsc{abort}. Receipt of a message fulfilling the abort condition $e'_i$ where $\{ i \in \mathbb{Z}^+ \land i < n \}$ causes the ledger $\ell_i$ to immediately transition the \textit{proposed} or \textit{prepared} transfer $b_i$ to the \textit{aborted} state and release the funds to the originator.
 
 \begin{equation}
 \forall e' \in E' : e' = \textsc{abort}
@@ -206,7 +219,9 @@ The abort conditions $E'$ for each transfer in $B$ are dependent only on the abo
 \subsection{Fault Tolerance}
 \label{subsec:fault-tolerance}
 
-The Atomic mode only guarantees atomicity when notaries are honest. A malicious or faulty notary could sign both \textsc{execute} and \textsc{abort} messages, communicate them to different ledgers and cause some transfers to be executed and other to be aborted. In order to protect against this kind of Byzantine fault, we must set a fault tolerance threshold $f$, such that participants in the payment can agree to trust the decision of the notaries.
+The Atomic mode only guarantees atomicity when notaries act honestly. Like all other participants, we assume notaries are either rational or Byzantine. Rational actors can be incentivized to participate with a fee.
+
+Byzantine notaries, however, could sign both \textsc{execute} and \textsc{abort} messages, communicate them to different ledgers and cause some transfers to be executed and other to be aborted. In order to protect against this, we must set a fault tolerance threshold $f$, such that participants in the payment can agree to trust the decision of the notaries.
 
 If $f = 0$, there is only a single notary $N = \{ N_1 \}$ and the \textsc{execute} and \textsc{abort} messages are simply signatures by that notary $N_1$.
 
@@ -217,15 +232,15 @@ If $f \geq 1$, notaries must use a Byzantine fault tolerant (BFT) agreement prot
 
 % TODO should this go somewhere else?
 
-To ensure that funds cannot be held in escrow forever, even in the case of failure, notaries $N$ enforce a timeout $t$. The recipient $p_n$ must submit the \textsc{receipt-signature} to the notaries $N$ before $t$ is reached, or the payment will be aborted and the escrowed funds returned. $t$ must be sufficient to account for the duration of the phases of the protocol leading up to the Execution.
+To ensure that funds cannot be held in escrow forever, even in the case of failure, notaries $N$ enforce a timeout $t$. The recipient $p_n$ must submit the \textsc{receipt-signature} to the notaries $N$ before $t$ is reached, or the payment will be aborted and the escrowed funds returned. $t$ must be sufficient to account for the duration of the phases of the protocol leading up to Execution.
 
 \subsection{Phases of the Protocol}
 
-Before a payment can occur, the sender $p_1$ must find a suitable set of connectors $C$ forming a path to the recipient $p_n$. Connectors have an interest in making their liquidity information available in order to attract payment flows. The minimum-cost and multicommodity flow problems have been studied extensively in the context of planning. \cite{ahuja1988network} \cite{cai2001time} \cite{wagner1959class}
+Before a payment can occur, the sender $p_1$ must find a suitable set of connectors $C$ forming a path to the recipient $p_n$. Connectors have an interest in making their liquidity information available in order to attract payment flows. The problems of minimum-cost and multicommodity flow have been studied extensively in the context of planning. \cite{ahuja1988network} \cite{cai2001time} \cite{wagner1959class}
 
 In the following, we assume that a path has already been chosen and the exchange rates and any fees quoted by the connectors in $C$ are known.
 
-Appendix \ref{sec:Atomic-sequence} illustrates the latter phases of the protocol, excluding Notary Selection.
+Appendix \ref{sec:atomic-sequence} illustrates the phases of the protocol, excluding Notary Selection.
 
 \subsubsection{Notary Selection}
 \label{subsec:notary-selection}
@@ -250,7 +265,7 @@ If $|N_{all}| \geq 3f+1$, $p_1$ selects a set of notaries $N$ such that $N \subs
 %The group of notaries $N$ acts as the set of coordinators and the payment can proceed using the same protocol as \cite{gray2006consensus}, substituting PBFT or another Byzantine fault-tolerant consensus algorithm.
 % TODO is this actually the same protocol?
 
-If $|N_{all}| < 3f+1$ and there are not enough commonly trusted notaries, we cannot rely on the Atomic execution mode and must instead use the one described in Section \ref{sec:Universal}.
+If $|N_{all}| < 3f+1$ and there are not enough commonly trusted notaries, we cannot rely on the Atomic execution mode and must instead use the one described in Section \ref{sec:universal}.
 %TODO Could mention that the initiator can retry with a higher fault tolerance
 
 
@@ -258,24 +273,25 @@ If $|N_{all}| < 3f+1$ and there are not enough commonly trusted notaries, we can
 
 \subsubsection{Proposal}
 
-In the proposal phase, the sender $p_1$ notifies each connector $ \langle p_i | i \in \mathbb{Z}^+ : 1 < i < n \rangle $ about the the book transfers $b_{i-1}$ and $b_i$ in the upcoming payment. Upon receiving the proposal, each connector $p_i$ will verify the proposed exchange rate, charge its fee and store the payment details. $p_i$ signals their acceptance of the terms of the book transfers $b_{i-1}$ and $b_i$, allowing the sender $p_1$ to proceed to the next phase.
+In the proposal phase, the sender $p_1$ notifies each connector $ \{ p_i \mid i \in \mathbb{Z}^+ \land 1 < i < n \} $ about the the book transfers $b_{i-1}$ and $b_i$ in the upcoming payment. Upon receiving the proposal, each connector $p_i$ will verify the proposed spread between the payments matches its exchange rate, charge its fee and store the payment details. $p_i$ accepts the terms of the book transfers $b_{i-1}$ and $b_i$ and the sender $p_1$ proceeds to the next phase.
 
 \subsubsection{Preparation}
 
 % TODO Explain WHY we do it differently than 2PC
 
 Unlike in a basic Two-Phase Commit, book transfers 
-$ \langle b_i \in B | i \in \mathbb{Z}^+ : 1 < i < n \rangle $
-are prepared in sequence from $b_1$ to $b_{n-1}$. The sender $p_1$ first authorizes and sends the instruction to prepare the first transfer $b_1$ on $l_1$, then requests that the first connector $p_2$ prepare $b_2$ on $l_2$. The connector $p_2$ is comfortable preparing $b_2$ because $b_1$ is prepared and the funds have been escrowed by $l_1$. Similarly, each connector $p_i$ prepares transfer $b_{i-1}$ once it is notified that $l_i$ has prepared $b_i$ and escrowed the corresponding funds.
+$ \{ b_i \in B \mid i \in \mathbb{Z}^+ \land 1 < i < n \} $
+are prepared in sequence from $b_1$ to $b_{n-1}$. Each connector is only willing to escrow their funds if they know funds have already been escrowed for them. 
+
+The sender $p_1$ first authorizes and sends the instruction to prepare the first transfer $b_1$ on $\ell_1$. $p_1$ then requests that the first connector $p_2$ prepare $b_2$ on $\ell_2$. The connector $p_2$ is comfortable preparing $b_2$ because $b_1$ is prepared and the funds have been escrowed by $\ell_1$. Similarly, each connector $p_i$ prepares transfer $b_{i-1}$ once it is notified that $\ell_i$ has prepared $b_i$ and escrowed the corresponding funds.
 
 \subsubsection{Execution}
 
-Once the last book transfer $b_{n-1}$ has been prepared and the funds escrowed, the recipient $p_n$ must sign the receipt before the timeout $t$. 
-$p_n$ submits the \textsc{receipt-signature} to the notaries $N$, who then run the agreement protocol (see Section \ref{subsec:fault-tolerance}) to decide whether the payment should execute. 
+Once the last book transfer $b_{n-1}$ has been prepared and the funds escrowed, the recipient $p_n$ must sign the receipt before the timeout $t$. $p_n$ is comfortable signing the receipt because they know that doing so will fulfill the condition of the escrowed funds waiting for them on $\ell_{n-1}$. $p_n$ submits the \textsc{receipt-signature} to the notaries $N$, who then run the agreement protocol (see Section \ref{subsec:fault-tolerance}) to decide whether the payment should execute.
 
-If $N$ agree that the \textsc{receipt-signature} was received in time, they submit it and a signed \textsc{execute} message to all participants $P$. Each participant $ \langle p_i \in P | i \in \mathbb{Z}^+ : 1 < i \leq n \rangle $ submits the \textit{receipt-signature} and \textsc{execute} message to $l_{i-1}$ to execute $b_{i-1}$ and claim the funds they are due.
+If $N$ agree that the \textsc{receipt-signature} was received in time, they submit it and a signed \textsc{execute} message to all participants $P$. Each participant $ \{ p_i \in P \mid i \in \mathbb{Z}^+ \land 1 < i \leq n \} $ submits the \textit{receipt-signature} and \textsc{execute} message to $\ell_{i-1}$ to execute $b_{i-1}$ and claim the funds they are due.
 
-If $N$ agree that the payment timed out, they submit the a signed \textsc{abort} message to $P$. Each participant $ \langle p_j \in P | j \in \mathbb{Z}^+ : 1 \geq j < n \rangle $ submits the \textsc to $l_j$ and reclaim their escrowed funds. 
+If $N$ agree that the payment timed out, they submit the a signed \textsc{abort} message to $P$. Each participant $ \{ p_j \in P \mid j \in \mathbb{Z}^+ \land 1 \geq j < n \} $ submits the \textsc{abort} message to $\ell_j$ and reclaims its escrowed funds. 
 
 \subsection{Correctness}
 
@@ -296,7 +312,7 @@ Therefore our theorem holds.
 
 \subsubsection{Liveness}
 
-Liveness means that every non-faulty ledger connected to at least one non-faulty participant will eventually execute or abort its transfer.
+Liveness means that every non-faulty ledger connected to at least one non-faulty, rational participant will eventually execute or abort its transfer.
 
 From the liveness property of the underlying agreement protocol, we know that the notaries will eventually decide to either \textsc{commit} or \textsc{abort} and broadcast that decision to the participants. Each ledger is connected to at least two participants. If one of these participants is correct, it will forward the decision to the ledger.
 
@@ -312,34 +328,41 @@ Each connector in $C$ incurs some costs and risks for participating in a payment
 
 When trading different assets, connectors in $C$ effectively write the sender $p_1$ an American option \cite{black1973pricing}\cite{brennan1977valuation}
 which, on exercise, swaps an asset on one ledger for an equivalent asset on another ledger.
-In addition to the factors considered in standard option pricing, the connector should also account for the following risks and attacks in its fee.
+In addition to the factors considered in standard option pricing, the connector should also account for the following attack in its fee.
 
-\subsubsection{Liquidity Exhaustion}
+\subsubsection{Liquidity Starvation}
 
-An attacker can attempt to temporarily tie up all of a connector's liquidity in payments it knows will fail. This attack is rendered uneconomical if the connector sets its fee to cover its costs and the profit it would expect if the payment were successful. Furthermore, connectors, including those operated by the same entity as a ledger, can prevent all of their funds from being tied up by escalating their fees as a function of the percentage of their total liquidity being held in escrow. 
+An attacker can attempt to temporarily tie up all of a connector's liquidity in payments it knows will fail. This attack is rendered uneconomical if the connector sets its fee to cover its costs and the profit it would expect if the payment were successful. Furthermore, connectors, including those operated by the same entity as a ledger, can prevent their funds from being completely tied up by escalating their fees as a function of the percentage of their total liquidity being held in escrow.
 
 \section{Universal Interledger Payments}
-\label{sec:Universal}
+\label{sec:universal}
 
 % TODO (ST) Not a big fan of explaining Atomic again in the Universal section
-The Atomic execution mode of this protocol provides safety and liveness under eventual synchrony, but requires participants $P$ in a payment to agree on a set of trusted notaries. This is non-trivial and to truly enable payments between any sender $p_1$ and any recipient $p_n$, we need a method for executing interledger payments without any commonly trusted system.
+% The Atomic execution mode of this protocol provides safety and liveness under eventual synchrony, but requires participants $P$ in a payment to agree on a set of trusted notaries. This is non-trivial and to truly enable payments between any sender $p_1$ and any recipient $p_n$, we need a method for executing interledger payments without any commonly trusted system.
 
-The Universal mode uses a different execution order to align the incentives of participants to execute the payment correctly without any external coordination. It provides safety and liveness for all non-faulty participants connected to only non-faulty ledgers, under an assumption of bounded synchrony with a known bound. In Section \ref{subsubsec:optimal-timeouts} we discuss the practical considerations of using Universal mode in a system that does not guarantee bounded synchrony, e.g. the Internet.
+While the Atomic mode uses notaries to ensure proper execution of a payment, the Universal mode relies on the incentives of rational participants instead to eliminate the need for external coordination. It provides safety and liveness for all non-faulty participants connected to only non-faulty ledgers, under an assumption of bounded synchrony with a known bound. In Section \ref{subsubsec:optimal-timeouts} we discuss the practical considerations of using Universal mode in a system that does not guarantee bounded synchrony, e.g. the Internet.
 
-Appendix \ref{sec:Universal-sequence} illustrates the phases of the payment in this mode.
+Appendix \ref{sec:universal-sequence} illustrates the phases of the payment in this mode.
 
 
 \subsection{Execution Order}
 
-In Atomic mode, the book transfers $B$ are escrowed pending receipt of the \textsc{receipt-signature} and \textsc{execute} message from the notaries $N$. The notaries enforce a global timeout, and $B$ may be executed in any order once $N$ come to agreement about the outcome of the payment.
+% In Atomic mode, the book transfers $B$ are escrowed pending receipt of the \textsc{receipt-signature} and \textsc{execute} message from the notaries $N$. The notaries enforce a global timeout, and $B$ may be executed in any order once $N$ come to agreement about the outcome of the payment.
 
-In contrast, in Universal mode, there are no notaries. $B$ are escrowed only on the condition of receiving the \textsc{receipt-signature}. Instead of having a global timeout, each book transfer in $ \langle b_i | i \in \mathbb{Z}^+ : i < n \rangle $ has its own expiration time enforced by the ledger $l_i$. The book transfers $B$ must be executed in a specific order to ensure all participants' incentives are aligned to execute the payment properly and to ensure delivery of the \textsc{receipt-signature} to the sender $p_1$.
+In Universal mode, there are no notaries. The book transfers $B$ must be executed in a specific order to ensure all participants' incentives are aligned to execute the payment properly and to ensure delivery of the \textsc{receipt-signature} to the sender $p_1$.
 
-After the last book transfer $b_{n-1}$ is prepared, the recipient $p_n$ signs the receipt and presents the \textsc{receipt-signature} directly to their ledger $l_{n-1}$. If it is before the transfer's expiration time $t_{n-1}$, $b_{n-1}$ will be executed immediately.
+The transfers $B$ are escrowed only on the condition of receiving the \textsc{receipt-signature}:
 
-Once $b_{n-1}$ is executed and the recipient $p_n$ is paid, connector $p_{n-1}$ has a very strong incentive to pass the \textsc{receipt-signature} back to $l_{n-2}$, as they have paid out but have not yet been paid. When each connector $ \langle p_j \in P | j \in \mathbb{Z}^+ : 1 < j < n \rangle $ learns of the execution of the book transfer $b_j$, they must get the \textsc{receipt-signature} from $l_j$ and submit it to $l_{j-1}$ to claim the money waiting in escrow for them. 
+\begin{equation}
+\forall e \in E : e = \textsc{receipt-signature}
+\end{equation}
 
-Thus, the transfers in $B$ are executed in ``backwards'' order, from the recipient $p_n$ to the sender $p_1$. Once the first transfer $b_1$ is executed, the sender $p_1$ can get the \textsc{receipt-signature} from their ledger $l_1$.
+Instead of having a global timeout, each book transfer in $ \{ b_i \in B \mid i \in \mathbb{Z}^+ \land i < n \} $ has its own expiration time enforced by the ledger $\ell_i$. 
+After the last book transfer $b_{n-1}$ is prepared, the recipient $p_n$ signs the receipt and presents the \textsc{receipt-signature} directly to their ledger $\ell_{n-1}$. If it is before the transfer's expiration time $t_{n-1}$, $b_{n-1}$ will be executed immediately.
+
+Once $b_{n-1}$ is executed and the recipient $p_n$ is paid, connector $p_{n-1}$ has a very strong incentive to pass the \textsc{receipt-signature} back to $\ell_{n-2}$, as they have paid out money but have not yet been paid. When each connector $ \{ p_j \in P \mid j \in \mathbb{Z}^+ \land 1 < j < n \} $ learns of the execution of the book transfer $b_j$, they must get the \textsc{receipt-signature} from $\ell_j$ and submit it to $\ell_{j-1}$ to claim the money waiting in escrow for them. 
+
+Thus, the transfers in $B$ are executed in ``backwards'' order, from the recipient $p_n$ to the sender $p_1$. Once the first transfer $b_1$ is executed, the sender $p_1$ can get the \textsc{receipt-signature} from their ledger $\ell_1$.
 
 If the last transfer $b_{n-1}$ times out before $p_n$ submits the \textsc{receipt-signature}, all transfers in $B$ will expire and the escrowed funds will be returned to their originator. The following section discusses expiration times and the message delay risk connectors must manage.
 
@@ -351,20 +374,21 @@ If the last transfer $b_{n-1}$ times out before $p_n$ submits the \textsc{receip
 
 % TODO should we use latency instead of absolute points in time?
 
-Each book transfer in $B$ must have an expiration time $t$ to ensure liveness. In order for a connector $ \langle p_i \in P | i \in \mathbb{Z}^+ : 1 < i < n \rangle $ to agree to take part in the payment, they must be able to pass the \textsc{receipt-signature} from ledger $l_i$ to $l_{i-1}$ and execute $b_{i-1}$ before it expires. If $b_i$ is executed but $b_{i-1}$ expires, $p_i$ loses money. Because $b_i$ may execute very close to its expiration time $t_i$, the expiration time $t_{i-1}$ for transfer $b_{i-1}$ must be greater than that of $b_i$ by some finite time difference $t_{i-1} - t_i$.
+Each book transfer in $B$ must have an expiration time $t$ to ensure liveness. In order for a connector $ \{ p_i \in P \mid i \in \mathbb{Z}^+ \land 1 < i < n \} $ to agree to take part in the payment, they must be able to pass the \textsc{receipt-signature} from ledger $\ell_i$ to $\ell_{i-1}$ and execute $b_{i-1}$ before it expires. If $b_i$ is executed but $b_{i-1}$ expires, $p_i$ loses money. Because $b_i$ may execute very close to its expiration time $t_i$, the expiration time $t_{i-1}$ for transfer $b_{i-1}$ must be greater than that of $b_i$ by some finite time difference $t_{i-1} - t_i$.
 
-This time difference $t_{i-1} - t_i$ must account for the messaging delays $M(l_i, p_i)$ from $l_i$ to $p_i$ and $M(p_i, l_{i-1})$ from $p_i$ to $l_{i-1}$ (which includes the processing delays at $p_i$, $l_i$ and $l_{i-1}$ respectively) and the clock skew $K(l_{i-1}, l_i)$ between ledgers $l_{i-1}$ and $l_i$.
+This time difference $t_{i-1} - t_i$ must account for the messaging delays $M(\ell_i, p_i)$ from $\ell_i$ to $p_i$ and $M(p_i, \ell_{i-1})$ from $p_i$ to $\ell_{i-1}$ (which includes the processing delays at $p_i$, $\ell_i$ and $\ell_{i-1}$ respectively) and the clock skew $K(\ell_{i-1}, \ell_i)$ between ledgers $\ell_{i-1}$ and $\ell_i$.
 % TODO citation for clock skew
 
 \begin{equation}
-t_i \geq M(l_i, p_i) + M(p_i, l_{i-1}) + K(l_{i-1}, l_i) + t_{i+1}
+\label{eq:expiration-delta}
+t_i \geq t_{i+1} + M(\ell_i, p_{i+1}) + M(p_{i+1}, \ell_i) + S(\ell_i, \ell_{i+1})
 \end{equation}
 
 The timeout $t_{n-1}$ for the destination transfer $b_{n-1}$ is equal to the timeout $t$ in Atomic mode introduced in Section \ref{subsec:timeout}. That is, it is large enough to allow for the preparation of the transfers and for the recipient to sign and submit the \textsc{receipt-signature}.
 
 
 
-%The connector $c_i$ is in the best position to determine $\Delta t^{msg}_i$ and $\Delta t^{clk}_i$ because it holds accounts with $l_i$ and $l_{i+1}$ and deeply understands the ledgers that it interacts with. It is also best equipped to reduce the risk of network latency exceeding $\Delta t^{msg}_i$ by introducing redundant and highly available connectivity between $l_i$ and $l_{i+1}$.
+%The connector $c_i$ is in the best position to determine $\Delta t^{msg}_i$ and $\Delta t^{clk}_i$ because it holds accounts with $\ell_i$ and $\ell_{i+1}$ and deeply understands the ledgers that it interacts with. It is also best equipped to reduce the risk of network latency exceeding $\Delta t^{msg}_i$ by introducing redundant and highly available connectivity between $\ell_i$ and $\ell_{i+1}$.
 
 % TODO Mention that ledgers and connectors can offer redundancy (ledgers through consensus, connectors through having multiple instances)
 
@@ -372,94 +396,104 @@ The timeout $t_{n-1}$ for the destination transfer $b_{n-1}$ is equal to the tim
 
 % define safety and liveness, and discuss them for non-faulty participants connected to non-faulty ledgers
 
-For our analysis of Universal mode, we consider both safety and liveness under bounded synchrony. We define bounded synchrony similar to the definition given in \cite{dwork1988consensus} as a system in which there is a known upper bound $M$ on messaging delays between processes and a known upper bound $K$ on clock skew between two nodes. We assume that processing times are negligible and included in $M$.
+For our analysis of Universal mode, we consider both safety and liveness under bounded synchrony. We define bounded synchrony similar to the definition given in \cite{dwork1988consensus} as a system in which there is a known upper bound $M$ on messaging delays between processes and a known upper bound $S$ on clock skew between two nodes. We assume that processing times are negligible and included in $M$.
 
 \subsubsection{Safety}
 
-Safety means that there will be no book transfer $ \langle b_i \in B | i \in \mathbb{Z}^+ : i < n-1 \rangle $ which expires if $b_{i+1}$ executed unless $l_i$, $l_{i+1}$ or participant $p_{i+1}$ are faulty.
 
-Let $b_{i+1}$ execute at time $\phi_0$. We know that $b_{i+1}$ was not expired, therefore $\phi_0 < t_{i+1}$. A correct ledger $l_{i+1}$ will send a message $\langle\textit{executed}, b_i, \textsc{receipt-signature}\rangle$ to connector $p_{i+1}$ which will arrive at time $\phi_1 \leq M(x,y) + \phi_0$. The correct connector $c_i$ will send a message $\langle\textit{execute}, \textsc{receipt-signature}\rangle$ to ledger $l_i$ which will arrive at time $\phi_2 \leq M(x,y) + \phi_1$. In order to prove XYZ, we must show that $\phi_2 \leq t_i - K(l_i, l_{i+1})$.
+% TODO check that all of the indexes are correct
 
-% 
+Safety means that there will be no book transfer $ \{ b_i \in B \mid i \in \mathbb{Z}^+ \land i < n-1 \} $ which expires if $b_{i+1}$ executed unless $\ell_i$, $\ell_{i+1}$ or participant $p_{i+1}$ are faulty.
 
-Since $l_i$ is a correct ledger, it will execute transfer $b_i$ which means $b_i$ can never expire.
+Let $b_{i+1}$ execute at time $\phi_0$. We know that $b_{i+1}$ was not expired, therefore:
+
+\begin{equation}
+\label{eq:phi0}
+\phi_0 < t_{i+1}
+\end{equation}
+
+A correct ledger $\ell_{i+1}$ will send a message $\langle\textit{executed}, b_i, \textsc{receipt-signature}\rangle$ to connector $p_{i+1}$ which will arrive at time $\phi_1$:
+
+\begin{equation}
+\label{eq:phi1}
+\phi_1 \leq \phi_0 + M(\ell_i, p_{i+1})
+\end{equation}
+
+The rational connector $p_{i+1}$ will send a message $\langle\textit{execute}, \textsc{receipt-signature}\rangle$ to ledger $\ell_i$ which will arrive at time $\phi_2$.
+
+\begin{equation}
+\label{eq:phi2}
+\phi_2 \leq \phi_1 + M(p_{i+1}, \ell_i)
+\end{equation}
+
+The correct ledger $\ell_i$ is guaranteed to execute transfer $b_i$ if and only if the message arrives before the timeout $t_i$. However, so far we have expressed all times in terms of $\ell_{i+1}$'s local clock. In order to ensure that $b_i$ is not expired, we must account for clock skew:
+
+\begin{equation}
+\label{eq:phi3}
+t_i \geq \phi_2 + S(\ell_i, \ell_{i+1})
+\end{equation}
+
+From \ref{eq:expiration-delta}, \ref{eq:phi1}, \ref{eq:phi2} and \ref{eq:phi3}:
+
+\begin{equation}
+\begin{split}
+t_i & \geq \phi_2 + S(\ell_i, \ell_{i+1}) \\
+    & \geq \phi_1 + M(p_{i+1}, \ell_i) + S(\ell_i, \ell_{i+1}) \\
+    & \geq \phi_0 + M(\ell_i, p_{i+1}) + M(p_{i+1}, \ell_i) + S(\ell_i, \ell_{i+1}) \\
+    & \geq t_{i+1} + M(\ell_i, p_{i+1}) + M(p_{i+1}, \ell_i) + S(\ell_i, \ell_{i+1})
+\end{split}
+\end{equation}
+
+Since $\ell_i$ is a correct ledger, it will execute the transfer. A transfer that has been executed on a correct ledger cannot expire, therefore $b_i$ cannot expire.
 
 \subsubsection{Liveness}
 
-Liveness means that eventually each book transfer $ \langle b_i \in B | i \in \mathbb{Z}^+ : i < n \rangle $ on a non-faulty ledger $l_i$ must either execute or abort.
+Liveness means that eventually each book transfer $ \{ b_i \in B \mid i \in \mathbb{Z}^+ \land i < n \} $ on a non-faulty ledger $\ell_i$ must either be \textit{executed} or \textit{aborted}.
 
-All book transfers $b_i$ have a finite expiry time $t_i$. A correct ledger $l_i$ will expire transfer $b_i$ at time $t_i$ unless it has already executed.
+All book transfers $b_i$ have a finite expiry time $t_i$. A correct ledger $\ell_i$ will expire transfer $b_i$ at time $t_i$ unless it has already executed.
 
-Therefore after time $t_i$, transfer $b_i$ will be either executed or aborted.
+Therefore after time $t_i$, transfer $b_i$ will be either \textit{executed} or \textit{aborted}.
 
 \subsection{Fault and Attack Mitigation}
 
-In Section \ref{subsec:fees} we discussed the connector fee in Atomic mode. In Universal mode, there are additional costs that the connector must take into account:
-
-%TODO ST Discuss BAR here?
+In Section \ref{subsec:fees} we discussed the connector fee in Atomic mode. In Universal mode, there are additional costs that the rational connector must take into account:
 
 \subsubsection{Optimal Timeouts}
 \label{subsubsec:optimal-timeouts}
 
-The bounds on messaging delay $M$ and clock skew $K$ are unknown in an asynchronous system. However, for some estimated bound $M'$, the connector $ \langle p_i \in P | i \in \mathbb{Z}^+ : 1 < i < n \rangle $ can estimate the probability $\Pr(M < M')$ and calculate the value of the risk to them into their fee. The larger $t_{i-1} - t_i$ becomes, the lower the risk. However, as $t_{i-1} - t_i$ increases, the expiration time for each transfer increases. Longer expiration times also incur higher fees, because funds have the potential to be be held in escrow for a longer period. The sender will try to find values for $t_{i-1} - t_i$ such that the total amount of fees is minimized.
+The bounds on messaging delay $M$ and clock skew $K$ are unknown in an asynchronous system. However, for some estimated bound $M'$, the connector $ \{ p_i \in P \mid i \in \mathbb{Z}^+ \land 1 < i < n \} $ can estimate the probability $\Pr(M < M')$ and calculate the value of the risk to them into their fee. The larger $t_{i-1} - t_i$ becomes, the lower the risk. However, as $t_{i-1} - t_i$ increases, the expiration time for each transfer increases. Longer expiration times also incur higher fees, because funds have the potential to be be held in escrow for a longer period. The sender $p_1$ will try to find values for $t_{i-1} - t_i$ such that the total amount of fees is minimized.
+
+\subsubsection{Robust Messaging}
+
+The sender $p_1$ and the recipient $p_n$ may collude in an attempt to defraud a connector. Their goal is to interfere with the messaging as mentioned in the previous section to prevent the connector $ \{ p_i \in P \mid i \in \mathbb{Z}^+ \land 1 < i < n \} $ from completing the transfer $b_{i-1}$ thereby profiting at $p_i$'s expense.
+
+This is different than the optimization discussed in Section \ref{subsubsec:optimal-timeouts} because in this case faults do not occur randomly.
+
+Connectors and ledgers can mitigate this attack by prioritizing execution over other types of messages and establishing redundant or trusted communication channels that are more difficult for would-be attackers to disrupt.
 
 \subsubsection{Receipt Privacy}
 
 The recipient $p_n$ does not have to transfer any money, but we assume that the act of signing the receipt has some external meaning, such as nullifying an existing asset of the recipient (e.g. an invoice) or creating a new liability.
 
-To claim the funds escrowed for them, the recipient $p_n$ must submit \textsc{receipt-signature} to $l_{n-1}$ before the transfer $b_{n-1}$ is executed. In an asynchronous system, $b_{n-1}$ might timeout while this message is in transit.
+To claim the funds escrowed for them, the recipient $p_n$ must submit \textsc{receipt-signature} to $\ell_{n-1}$ before the transfer $b_{n-1}$ is executed. In an asynchronous system, $b_{n-1}$ might timeout while this message is in transit.
 
-In order to guarantee safety for the recipient then, we must introduce another property of ledgers, \textit{receipt-privacy}. An honest ledger which offers \textit{receipt-privacy} does not disclose a $\langle\textsc{execute}, b_i, \textsc{receipt-signature}\rangle$ message (or the \textsc{receipt-signature} contained therein) unless $b_i$ was executed successfully.
+In order to guarantee safety for the recipient then, we must introduce another property of ledgers, \textit{receipt-privacy}. A correct ledger that offers \textit{receipt-privacy} does not disclose a $\langle\textsc{execute}, b_i, \textsc{receipt-signature}\rangle$ message (or the \textsc{receipt-signature} contained therein) unless $b_i$ is executed successfully.
 
-If the recipient chooses an honest ledger with \textit{receipt-privacy}, they are not a risk, even in an asynchronous system, because their ledger $l_{n-1}$ will disclose \textsc{receipt-signature} iff $b_{n-1}$ executes.
+If the recipient chooses an honest ledger with \textit{receipt-privacy}, they are not a risk, even in an asynchronous system, because their ledger $\ell_{n-1}$ will disclose \textsc{receipt-signature} if and only if $b_{n-1}$ executes.
 
-\subsubsection{Robust Messaging}
-
-The sender and the recipient may collude in an attempt to defraud a connector. Their goal is to interfere with the messaging as mentioned in the previous section to prevent the connector $ \langle p_i \in P | i \in \mathbb{Z}^+ : 1 < i < n \rangle $ from completing the transfer $b_{i-1}$ thereby profiting at $p_i$'s expense.
-
-This is different than the optimization discussed in Section \ref{subsubsec:optimal-timeouts} because in this case faults do not occur randomly.
-
-Connectors and ledgers can mitigate this attack by prioritizing execution over other types of messages and establishing redundant or trusted communication channels that are more difficult to disrupt.
-
-
-
-
-% TODO should we have a phases section here?
-
-
-% \subsection{Execution Conditions}
-
-% Each book transfer $b_i \in B$ where 
-% % TODO should we say that n = |B| ?
-% $ \{ i \in \mathbb{Z}^+ : i \leq n \} $ is escrowed based on some execution condition $e_i$ describing events external to the ledger. A simple way to securely communicate the outcome of external events to the ledgers is via cryptographic signatures.
-
-% All execution conditions $E$, for all transfers in $B$, must be fulfilled by the same condition (see Appendix \ref{subsec:common-condition}). This is the \textsc{receipt-signature}. The receipt is agreed upon by the sender and recipient before the payment is made. It contains a nonce---a unique tag---and, optionally, information about the details of the payment. For the purposes of this protocol, all that matters is that the sender and recipient agree that the receipt represents fulfillment of the payment. The connectors and ledgers do not need to understand the receipt's contents, which may be opaque to them, but the ledgers must be able to validate the signature.
-
-% In a given payment, all ledgers $L$ must consider the same \textsc{receipt-signature} either valid or invalid. This means that they must support the same signature scheme and that there can be no ambiguity in the specification of the scheme or differences in implementations between the ledgers. The sender, recipient or connectors will lose money if some ledgers consider a \textsc{receipt-signature} valid and some consider it invalid.
-
-
-
-
-
-
-
-
-% % \subsection{Combining Atomic and Universal}
-% % a single payment can comprise sections of Atomic within Universal
-% % the notaries act like 
-% % 
 
 \section{Conclusion}
 
-% TODO redo the conclusion
-
 We have proposed a protocol for interledger payments across an arbitrary chain of ledgers and connectors. The protocol uses ledger-provided escrow based on cryptographic conditions to guarantee the sender of a payment will either have cryptographic receipt confirming that the recipient has been paid or their escrowed funds will be returned.
 
-The Atomic mode of the protocol provides atomicity for payment chains in which the participants can agree upon a group of notaries. The Universal mode enables payments between participants that do not all share trust in any institution or system, requiring agreement only upon the semantics of the shared cryptographic condition.
+The Atomic mode of the protocol provides atomicity for payment chains in which the participants can agree upon a group of notaries. The Universal mode uses the incentives of rational actors to enable payments between participants that do not all share trust in any institution or system.
 
 As this protocol does not rely on any single system for processing payments, there is no global scalability limit. Payments can be as fast and cheap as the constituent ledgers and connectors allow and transaction details are private to their participants. The separation of concerns and the minimal standardization requirements enable continuous optimization and competition between connectors and between ledgers.
 
-Removing the need to trust the connector lowers the barrier for creating ever more connections between ledgers. This gives all payment systems global reach and enables a more accessible, competitive and resilient global financial system.
+Removing the need to trust the connector enables anyone with accounts on two or more ledgers to make connections between them. Connectors can be composed, making payments and finance more accessible, competitive and resilient. This enables the creation of a global graph of liquidity or \textit{Interledger}.
+
+% DTM.
+
 
 
 % TODO BW Mention that payments are actually settled (or can be)
@@ -474,7 +508,7 @@ Removing the need to trust the connector lowers the barrier for creating ever mo
 \section{Appendix}
 
 \subsection{Atomic Mode Sequence Diagram}
-\label{sec:Atomic-sequence}
+\label{sec:atomic-sequence}
 
 
 \begin{minipage}{\textwidth}
@@ -486,15 +520,13 @@ Removing the need to trust the connector lowers the barrier for creating ever mo
 \clearpage
 
 \subsection{Universal Mode Sequence Diagram}
-\label{sec:Universal-sequence}
+\label{sec:universal-sequence}
 
 \begin{minipage}{\textwidth}
     \centering
     \includegraphics[width=\textwidth]{figures/universal-sequence.pdf}
     \captionof{figure}{Phases of a payment in the Universal mode}
 \end{minipage}
-
-
 
 % \subsection{Common Condition}
 % \label{subsec:common-condition}
@@ -511,7 +543,7 @@ Removing the need to trust the connector lowers the barrier for creating ever mo
 % e_1 \implies z \label{eq:axiomsender}
 % \end{equation}
 
-% The sender's chosen ledger $l_1$ is authoritative for the execution of $b_1$ and will enforce that the condition $e_1$ has been met.
+% The sender's chosen ledger $\ell_1$ is authoritative for the execution of $b_1$ and will enforce that the condition $e_1$ has been met.
 
 % The recipient $p_n$ requires that the execution of the final transfer $b_{n-1}$ is guaranteed once they sign the receipt ($z$). This means they will not sign it unless the condition $e_n$ of $b_{n-1}$ is true or $z$ guarantees $e_n$:
 
@@ -525,9 +557,9 @@ Removing the need to trust the connector lowers the barrier for creating ever mo
 % z \implies e_n \label{eq:axiomrecp}
 % \end{equation}
 
-% The recipient's chosen ledger $l_n$ is authoritative for the execution of $b_{n-1}$ and will enforce it once $e_n$ has been met.
+% The recipient's chosen ledger $\ell_n$ is authoritative for the execution of $b_{n-1}$ and will enforce it once $e_n$ has been met.
 
-% Finally, each connector $c_i$ where $\{ i \in \mathbb{Z}^+ : y < n \}$ requires that if $b_{i+1}$ executes, $b_i$ also executes---otherwise $c_i$ would take a loss:
+% Finally, each connector $c_i$ where $\{ i \in \mathbb{Z}^+ \land y < n \}$ requires that if $b_{i+1}$ executes, $b_i$ also executes---otherwise $c_i$ would take a loss:
 
 % \begin{equation}
 % e_{i+1} \implies e_i \label{eq:axiomcoord}

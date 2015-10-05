@@ -22,7 +22,7 @@ n_k individual notary
 t_i timeout for a specific transfer
 M bound on messaging delay
 M(_, _) messaging delay for a specific pair of processes
-K bound on clock skew
-K(_, _) max clock skew for a specific pair of processes
+S bound on clock skew
+S(_, _) max clock skew for a specific pair of processes
 \delta t^{clk}_i clock skew for a specific connector
 o_i option price (fee) a specific transfer

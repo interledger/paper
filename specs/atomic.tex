@@ -1,0 +1,649 @@
+\batchmode %% Suppresses most terminal output.
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{color}
+\usepackage{ilpspec}
+% \usepackage{usenix}
+\definecolor{boxshade}{gray}{0.95}
+
+\setlength{\headheight}{0.0in}
+
+\usepackage{latexsym}
+\usepackage{ifthen}
+% \usepackage{color}
+\usepackage{tlatex}
+
+\begin{document}
+\onecolumn
+\appendix
+\stepcounter{section}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\subsection{Formal Specification: Atomic mode}
+\label{sec:atomic-spec}
+\tlatex
+\setboolean{shading}{true}
+\@x{}\moduleLeftDash\@xx{ {\MODULE} Atomic}\moduleRightDash\@xx{}%
+\begin{lcom}{0}%
+\begin{cpar}{0}{T}{F}{2.5}{0}{}%
+Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
+ Interledger Protocol \ensuremath{Atomic} (\ensuremath{ILP}/A)
+\end{cpar}%
+\vshade{10.0}%
+\begin{cpar}{1}{F}{F}{0}{0}{}%
+\begin{minipage}[t]{\linewidth}
+\begin{verbatim}
+ Modeled after the excellent Raft specification by Diego Ongaro.         
+   Available at https://github.com/ongardie/raft.tla                     
+\end{verbatim}
+\end{minipage}
+\end{cpar}%
+\vshade{5.0}%
+\begin{cpar}{0}{F}{F}{0}{0}{}%
+\begin{minipage}[t]{\linewidth}
+\begin{verbatim}
+   Copyright 2014 Diego Ongaro.                                          
+   This work is licensed under the Creative Commons Attribution-4.0      
+   International License https://creativecommons.org/licenses/by/4.0/  
+\end{verbatim}
+\end{minipage}
+\end{cpar}%
+\end{lcom}%
+\@pvspace{8.0pt}%
+\@x{ {\EXTENDS} Naturals ,\, Sequences ,\, Bags ,\, TLC}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ The set of ledger \ensuremath{IDs
+}}%
+\@xx{}%
+\@x{ {\CONSTANTS} Ledger}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ The set of participant \ensuremath{IDs
+}}%
+\@xx{}%
+\@x{ {\CONSTANTS} Participant}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ The notary
+}%
+\@xx{}%
+\@x{ {\CONSTANTS} Notary}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Sender states
+}%
+\@xx{}%
+\@x{ {\CONSTANTS} S\_Ready ,\, S\_Waiting ,\, S\_Done}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Notary states
+}%
+\@xx{}%
+\@x{ {\CONSTANTS} N\_Waiting ,\, N\_Committed ,\, N\_Aborted}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Ledger states
+}%
+\@xx{}%
+\@x{ {\CONSTANTS} L\_Proposed ,\, L\_Prepared ,\, L\_Executed ,\, L\_Aborted}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Message types
+}%
+\@xx{}%
+\@x{ {\CONSTANTS} PrepareRequest ,\, ExecuteRequest ,\, AbortRequest ,\,}%
+\@x{\@s{54.75} PrepareNotify ,\, ExecuteNotify ,\, AbortNotify ,\,}%
+\@x{\@s{54.75} SubmitReceiptRequest}%
+\@pvspace{8.0pt}%
+\@x{}\midbar\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ Global variables
+}%
+\@xx{}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ A bag of records representing requests and responses sent from one server
+}%
+\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ to another.
+}%
+\@xx{}%
+\@x{ {\VARIABLE} messages}%
+\@pvspace{8.0pt}%
+\@x{}\midbar\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ Sender variables
+}%
+\@xx{}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ State of the sender (\ensuremath{S\_Ready}, \ensuremath{S\_Waiting},
+ \ensuremath{S\_Done})
+}%
+\@xx{}%
+\@x{ {\VARIABLE} senderState}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ All sender variables
+}%
+\@xx{}%
+\@x{ senderVars \.{\defeq} {\langle} senderState {\rangle}}%
+\@x{}\midbar\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ The following variables are all per ledger (functions with domain
+ \ensuremath{Ledger})
+}%
+\@xx{}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ The ledger state (\ensuremath{L\_Proposed}, \ensuremath{L\_Prepared},
+ \ensuremath{L\_Executed} or \ensuremath{L\_Aborted})
+}%
+\@xx{}%
+\@x{ {\VARIABLE} ledgerState}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ All ledger variables
+}%
+\@xx{}%
+\@x{ ledgerVars \.{\defeq} {\langle} ledgerState {\rangle}}%
+\@x{}\midbar\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ Notary variables
+}%
+\@xx{}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ State of the notary (\ensuremath{N\_Waiting}, \ensuremath{N\_Committed},
+ \ensuremath{N\_Aborted})
+}%
+\@xx{}%
+\@x{ {\VARIABLE} notaryState}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ All notary variables
+}%
+\@xx{}%
+\@x{ notaryVars \.{\defeq} {\langle} notaryState {\rangle}}%
+\@x{}\midbar\@xx{}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ All variables; used for stuttering (asserting state hasn\mbox{'}t changed)
+}%
+\@xx{}%
+ \@x{ vars \.{\defeq} {\langle} messages ,\, senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}\midbar\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ Helpers
+}%
+\@xx{}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Add a set of new messages in transit
+}%
+\@xx{}%
+ \@x{ Broadcast ( m ) \.{\defeq} messages \.{'} \.{=} messages \.{\oplus}
+ SetToBag ( m )}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Add a message to the bag of messages
+}%
+\@xx{}%
+\@x{ Send ( m ) \.{\defeq} Broadcast ( \{ m \} )}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Remove a message from the bag of messages. Used when a server is done
+}%
+\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ processing a message.
+}%
+\@xx{}%
+ \@x{ Discard ( m ) \.{\defeq} messages \.{'} \.{=} messages \.{\ominus}
+ SetToBag ( \{ m \} )}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Respond to a message by sending multiple messages
+}%
+\@xx{}%
+\@x{ ReplyBroadcast ( responses ,\, request ) \.{\defeq}}%
+ \@x{\@s{16.4} messages \.{'} \.{=} messages \.{\ominus} SetToBag ( \{ request
+ \} ) \.{\oplus} SetToBag ( responses )}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Combination of \ensuremath{Send} and \ensuremath{Discard
+}}%
+\@xx{}%
+\@x{ Reply ( response ,\, request ) \.{\defeq}}%
+\@x{\@s{16.4} ReplyBroadcast ( \{ response \} ,\, request )}%
+\@pvspace{16.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Return the minimum value from a set, or undefined if the set is empty.
+}%
+\@xx{}%
+ \@x{ Min ( s ) \.{\defeq} {\CHOOSE} x \.{\in} s \.{:} \A\, y \.{\in} s \.{:}
+ x \.{\leq} y}%
+\@x{}%
+\@y{\@s{0}%
+ Return the maximum value from a set, or undefined if the set is empty.
+}%
+\@xx{}%
+ \@x{ Max ( s ) \.{\defeq} {\CHOOSE} x \.{\in} s \.{:} \A\, y \.{\in} s \.{:}
+ x \.{\geq} y}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Is a final ledger state
+}%
+\@xx{}%
+ \@x{ IsFinalLedgerState ( i ) \.{\defeq} i \.{\in} \{ L\_Executed ,\,
+ L\_Aborted \}}%
+\@pvspace{8.0pt}%
+\@x{}\midbar\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ Define type specification for all variables
+}%
+\@xx{}%
+\@pvspace{8.0pt}%
+\@x{ TypeOK \.{\defeq} \.{\land} IsABag ( messages )}%
+ \@x{\@s{56.14} \.{\land} senderState \.{\in} \{ S\_Ready ,\, S\_Waiting ,\,
+ S\_Done \}}%
+ \@x{\@s{56.14} \.{\land} ledgerState\@s{3.06} \.{\in} [ Ledger
+ \.{\rightarrow} \{ L\_Proposed ,\, L\_Prepared ,\, L\_Executed ,\,
+ L\_Aborted \} ]}%
+\@pvspace{8.0pt}%
+\@x{}\midbar\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ Define initial values for all variables
+}%
+\@xx{}%
+\@pvspace{8.0pt}%
+\@x{ InitSenderVars\@s{0.27} \.{\defeq} \.{\land} senderState \.{=} S\_Ready}%
+\@pvspace{8.0pt}%
+ \@x{ InitLedgerVars\@s{1.67} \.{\defeq} \.{\land} ledgerState\@s{3.06} \.{=}
+ [ i \.{\in} Ledger \.{\mapsto} L\_Proposed ]}%
+\@pvspace{8.0pt}%
+\@x{ InitNotaryVars \.{\defeq} \.{\land} notaryState \.{=} N\_Waiting}%
+\@pvspace{8.0pt}%
+\@x{ Init \.{\defeq} \.{\land} messages \.{=} EmptyBag}%
+\@x{\@s{35.70} \.{\land} InitSenderVars}%
+\@x{\@s{35.70} \.{\land} InitLedgerVars}%
+\@x{\@s{35.70} \.{\land} InitNotaryVars}%
+\@pvspace{8.0pt}%
+\@x{}\midbar\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ Define state transitions
+}%
+\@xx{}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Participant \ensuremath{i} starts off the chain
+}%
+\@xx{}%
+\@x{ Start ( i ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\land} senderState \.{=} S\_Ready}%
+\@x{\@s{16.4} \.{\land} senderState \.{'} \.{=} S\_Waiting}%
+ \@x{\@s{16.4} \.{\land} Send ( [ mtype\@s{9.58} \.{\mapsto} PrepareRequest
+ ,\,}%
+\@x{\@s{56.16} msource \.{\mapsto} i ,\,}%
+\@x{\@s{56.16} mdest\@s{9.64} \.{\mapsto} i \.{+} 1 ] )}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} ledgerVars ,\, notaryVars
+ {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Notary times out
+}%
+\@xx{}%
+\@x{ NotaryTimeout \.{\defeq}}%
+\@x{\@s{16.4} \.{\land} notaryState \.{=} N\_Waiting}%
+\@x{\@s{16.4} \.{\land} notaryState \.{'} \.{=} N\_Aborted}%
+\@x{\@s{16.4} \.{\land} Broadcast (}%
+\@x{\@s{48.01} \{ [ mtype\@s{13.68} \.{\mapsto} AbortRequest ,\,}%
+\@x{\@s{55.78} msource\@s{4.10} \.{\mapsto} Notary ,\,}%
+\@x{\@s{55.78} mdest\@s{13.74} \.{\mapsto} k ] \.{:} k \.{\in} Ledger \} )}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars
+ {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Ledger spontaneously aborts
+}%
+\@xx{}%
+\@x{ LedgerAbort ( l ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\land} ledgerState [ l ] \.{=} L\_Proposed}%
+ \@x{\@s{16.4} \.{\land} ledgerState \.{'} \.{=} [ ledgerState {\EXCEPT}
+ {\bang} [ l ] \.{=} L\_Aborted ]}%
+\@x{\@s{16.4} \.{\land} Send ( [ mtype\@s{9.58} \.{\mapsto} AbortNotify ,\,}%
+\@x{\@s{56.16} msource \.{\mapsto} l ,\,}%
+\@x{\@s{56.16} mdest\@s{9.64} \.{\mapsto} l \.{-} 1 ] )}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, notaryVars
+ {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}\midbar\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ Message handlers
+}%
+\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ \ensuremath{i \.{=}} recipient, \ensuremath{j \.{=}} sender, \ensuremath{m
+ \.{=}} message
+}%
+\@xx{}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Server \ensuremath{i} receives a \ensuremath{Prepare} request from
+ participant \ensuremath{j
+}}%
+\@xx{}%
+\@x{ HandlePrepareRequest ( i ,\, j ,\, m ) \.{\defeq}}%
+ \@x{\@s{16.4} \.{\LET} valid \.{\defeq} \.{\land} ledgerState [ i ] \.{=}
+ L\_Proposed}%
+\@x{\@s{77.16} \.{\land} j \.{=} i \.{-} 1}%
+\@x{\@s{16.4} \.{\IN} \.{\lor} \.{\land} valid}%
+ \@x{\@s{47.91} \.{\land} ledgerState \.{'} \.{=} [ ledgerState {\EXCEPT}
+ {\bang} [ i ] \.{=} L\_Prepared ]}%
+ \@x{\@s{47.91} \.{\land} Reply ( [ mtype\@s{9.58} \.{\mapsto} PrepareNotify
+ ,\,}%
+\@x{\@s{90.47} msource \.{\mapsto} i ,\,}%
+\@x{\@s{90.47} mdest\@s{9.64} \.{\mapsto} i \.{+} 1 ] ,\, m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, notaryVars
+ {\rangle}}%
+\@x{\@s{36.79} \.{\lor} \.{\land} {\lnot} valid}%
+\@x{\@s{47.91} \.{\land} Discard ( m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Server \ensuremath{i} receives an \ensuremath{Execute} request from server
+ \ensuremath{j
+}}%
+\@xx{}%
+\@x{ HandleExecuteRequest ( i ,\, j ,\, m ) \.{\defeq}}%
+ \@x{\@s{16.4} \.{\LET} valid \.{\defeq} \.{\land} ledgerState [ i ] \.{=}
+ L\_Prepared}%
+\@x{\@s{77.16} \.{\land} j \.{=} Notary}%
+\@x{\@s{16.4} \.{\IN} \.{\lor} \.{\land} valid}%
+ \@x{\@s{47.91} \.{\land} ledgerState \.{'} \.{=} [ ledgerState {\EXCEPT}
+ {\bang} [ i ] \.{=} L\_Executed ]}%
+ \@x{\@s{47.91} \.{\land} Reply ( [ mtype\@s{9.58} \.{\mapsto} ExecuteNotify
+ ,\,}%
+\@x{\@s{90.47} msource \.{\mapsto} i ,\,}%
+\@x{\@s{90.47} mdest\@s{9.64} \.{\mapsto} i \.{-} 1 ] ,\, m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, notaryVars
+ {\rangle}}%
+\@x{\@s{36.79} \.{\lor} \.{\land} {\lnot} valid}%
+\@x{\@s{47.91} \.{\land} Discard ( m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Server \ensuremath{i} receives an Abort request from server \ensuremath{j
+}}%
+\@xx{}%
+\@x{ HandleAbortRequest ( i ,\, j ,\, m ) \.{\defeq}}%
+ \@x{\@s{16.4} \.{\LET} valid \.{\defeq} \.{\land} \.{\lor} ledgerState [ i ]
+ \.{=} L\_Proposed}%
+\@x{\@s{88.27} \.{\lor} ledgerState [ i ] \.{=} L\_Prepared}%
+\@x{\@s{77.16} \.{\land} j \.{=} Notary}%
+\@x{\@s{16.4} \.{\IN} \.{\lor} \.{\land} valid}%
+ \@x{\@s{47.91} \.{\land} ledgerState \.{'} \.{=} [ ledgerState {\EXCEPT}
+ {\bang} [ i ] \.{=} L\_Aborted ]}%
+ \@x{\@s{47.91} \.{\land} Reply ( [ mtype\@s{9.58} \.{\mapsto} AbortNotify
+ ,\,}%
+\@x{\@s{90.47} msource \.{\mapsto} i ,\,}%
+\@x{\@s{90.47} mdest\@s{9.64} \.{\mapsto} i \.{-} 1 ] ,\, m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, notaryVars
+ {\rangle}}%
+\@x{\@s{36.79} \.{\lor} \.{\land} {\lnot} valid}%
+\@x{\@s{47.91} \.{\land} Discard ( m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Ledger \ensuremath{j} notifies participant \ensuremath{i} that the transfer
+ is prepared
+}%
+\@xx{}%
+\@x{ HandlePrepareNotify ( i ,\, j ,\, m ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\LET} isRecipient \.{\defeq} i \.{=} Max ( Participant )}%
+\@x{\@s{16.4} \.{\IN} \.{\lor} \.{\land} isRecipient}%
+ \@x{\@s{47.91} \.{\land} Reply ( [ mtype\@s{9.58} \.{\mapsto}
+ SubmitReceiptRequest ,\,}%
+\@x{\@s{90.47} msource \.{\mapsto} i ,\,}%
+\@x{\@s{90.47} mdest\@s{9.64} \.{\mapsto} Notary ] ,\, m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@x{\@s{36.79} \.{\lor} \.{\land} {\lnot} isRecipient}%
+ \@x{\@s{47.91} \.{\land} Reply ( [ mtype\@s{9.58} \.{\mapsto} PrepareRequest
+ ,\,}%
+\@x{\@s{90.47} msource \.{\mapsto} i ,\,}%
+\@x{\@s{90.47} mdest\@s{9.64} \.{\mapsto} i \.{+} 1 ] ,\, m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Ledger \ensuremath{j} notifies participant \ensuremath{i} that the transfer
+ is executed
+}%
+\@xx{}%
+\@x{ HandleExecuteNotify ( i ,\, j ,\, m ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\LET} isSender \.{\defeq} i \.{=} Min ( Participant )}%
+\@x{\@s{16.4} \.{\IN} \.{\lor} \.{\land} {\lnot} isSender}%
+ \@x{\@s{47.91} \.{\land} Reply ( [ mtype\@s{9.58} \.{\mapsto} ExecuteRequest
+ ,\,}%
+\@x{\@s{90.47} msource \.{\mapsto} i ,\,}%
+\@x{\@s{90.47} mdest\@s{9.64} \.{\mapsto} i \.{-} 1 ] ,\, m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@x{\@s{36.79} \.{\lor} \.{\land} isSender}%
+\@x{\@s{47.91} \.{\land} senderState \.{=} S\_Waiting}%
+\@x{\@s{47.91} \.{\land} senderState \.{'} \.{=} S\_Done}%
+\@x{\@s{47.91} \.{\land} Discard ( m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} ledgerVars ,\, notaryVars
+ {\rangle}}%
+\@x{\@s{36.79} \.{\lor} \.{\land} isSender}%
+\@x{\@s{47.91} \.{\land} senderState \.{\neq} S\_Waiting}%
+\@x{\@s{47.91} \.{\land} Discard ( m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Ledger \ensuremath{j} notifies participant \ensuremath{i} that the transfer
+ is aborted
+}%
+\@xx{}%
+\@x{ HandleAbortNotify ( i ,\, j ,\, m )\@s{7.15} \.{\defeq}}%
+ \@x{\@s{16.4} \.{\LET} isSenderAndWaiting \.{\defeq} \.{\land} i \.{=} Min (
+ Participant )}%
+\@x{\@s{146.18} \.{\land} \.{\lor} senderState \.{=} S\_Waiting}%
+\@x{\@s{157.30} \.{\lor} senderState \.{=} S\_Ready}%
+\@x{\@s{16.4} \.{\IN} \.{\lor} \.{\land} isSenderAndWaiting}%
+\@x{\@s{47.91} \.{\land} senderState \.{'} \.{=} S\_Done}%
+\@x{\@s{47.91} \.{\land} Discard ( m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} ledgerVars ,\, notaryVars
+ {\rangle}}%
+\@x{\@s{36.79} \.{\lor} \.{\land} {\lnot} isSenderAndWaiting}%
+\@x{\@s{47.91} \.{\land} Discard ( m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Notary receives a signed receipt
+}%
+\@xx{}%
+\@x{ HandleSubmitReceiptRequest ( i ,\, j ,\, m ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\lor} \.{\land} i \.{=} Notary}%
+\@x{\@s{27.51} \.{\land} notaryState \.{=} N\_Waiting}%
+\@x{\@s{27.51} \.{\land} notaryState \.{=} N\_Committed}%
+\@x{\@s{27.51} \.{\land} ReplyBroadcast (}%
+\@x{\@s{46.82} \{ [ mtype\@s{13.68} \.{\mapsto} ExecuteRequest ,\,}%
+\@x{\@s{54.59} msource\@s{4.1} \.{\mapsto} i ,\,}%
+ \@x{\@s{54.59} mdest\@s{13.74} \.{\mapsto} k ] \.{:} k \.{\in} Ledger \} ,\,
+ m )}%
+ \@x{\@s{27.51} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@x{\@s{16.4} \.{\lor} \.{\land} \.{\lor} i \.{\neq} Notary}%
+\@x{\@s{38.62} \.{\lor} notaryState \.{\neq} N\_Waiting}%
+\@x{\@s{27.51} \.{\land} Discard ( m )}%
+ \@x{\@s{27.51} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Receive a message.
+}%
+\@xx{}%
+\@x{ Receive ( m ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\LET} i\@s{0.42} \.{\defeq} m . mdest}%
+\@x{\@s{36.79} j \.{\defeq} m . msource}%
+\@x{\@s{16.4} \.{\IN} \.{\lor} \.{\land} m . mtype \.{=} PrepareRequest}%
+\@x{\@s{47.91} \.{\land} HandlePrepareRequest ( i ,\, j ,\, m )}%
+\@x{\@s{36.79} \.{\lor} \.{\land} m . mtype \.{=} ExecuteRequest}%
+\@x{\@s{47.91} \.{\land} HandleExecuteRequest ( i ,\, j ,\, m )}%
+\@x{\@s{36.79} \.{\lor} \.{\land} m . mtype \.{=} AbortRequest}%
+\@x{\@s{47.91} \.{\land} HandleAbortRequest ( i ,\, j ,\, m )}%
+\@x{\@s{36.79} \.{\lor} \.{\land} m . mtype \.{=} PrepareNotify}%
+\@x{\@s{47.91} \.{\land} HandlePrepareNotify ( i ,\, j ,\, m )}%
+\@x{\@s{36.79} \.{\lor} \.{\land} m . mtype \.{=} ExecuteNotify}%
+\@x{\@s{47.91} \.{\land} HandleExecuteNotify ( i ,\, j ,\, m )}%
+\@x{\@s{36.79} \.{\lor} \.{\land} m . mtype \.{=} AbortNotify}%
+\@x{\@s{47.91} \.{\land} HandleAbortNotify ( i ,\, j ,\, m )}%
+\@x{\@s{36.79} \.{\lor} \.{\land} m . mtype \.{=} SubmitReceiptRequest}%
+\@x{\@s{47.91} \.{\land} HandleSubmitReceiptRequest ( i ,\, j ,\, m )}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ End of message handlers.
+}%
+\@xx{}%
+\@x{}\midbar\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ Network state transitions
+}%
+\@xx{}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ The network duplicates a message
+}%
+\@xx{}%
+\@x{ DuplicateMessage ( m ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\land} Send ( m )}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ The network drops a message
+}%
+\@xx{}%
+\@x{ DropMessage ( m ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\land} Discard ( m )}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
+ notaryVars {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}\midbar\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ Defines how the variables may transition.
+}%
+\@xx{}%
+\@pvspace{8.0pt}%
+\@x{ Termination \.{\defeq}}%
+ \@x{\@s{16.4} \.{\land} \A\, l \.{\in} Ledger \.{:} IsFinalLedgerState (
+ ledgerState [ l ] )}%
+\@x{\@s{16.4} \.{\land} senderState \.{=} S\_Done}%
+\@x{\@s{16.4} \.{\land} {\UNCHANGED} vars}%
+\@pvspace{8.0pt}%
+\@x{ Consistency \.{\defeq}}%
+ \@x{\@s{16.4} \A\, l1 ,\, l2 \.{\in} Ledger \.{:} {\lnot} \.{\land}
+ ledgerState [ l1 ] \.{=} L\_Aborted}%
+\@x{\@s{104.69} \.{\land} ledgerState [ l2 ] \.{=} L\_Executed}%
+\@pvspace{8.0pt}%
+\@x{ Next \.{\defeq} \.{\lor} Start ( Min ( Participant ) )}%
+\@x{\@s{39.83} \.{\lor} NotaryTimeout}%
+ \@x{\@s{39.83} \.{\lor} \E\, l\@s{5.35} \.{\in} Ledger \.{:} LedgerAbort ( l
+ )}%
+ \@x{\@s{39.83} \.{\lor} \E\, m \.{\in} {\DOMAIN} messages \.{:} Receive ( m
+ )}%
+\@x{}%
+\@y{\@s{17.5}%
+ \ensuremath{\.{\lor} \E\, m \.{\in} {\DOMAIN} messages} :
+ \ensuremath{DuplicateMessage(m)
+}}%
+\@xx{}%
+\@x{}%
+\@y{\@s{17.5}%
+ \ensuremath{\.{\lor} \E\, m \.{\in} {\DOMAIN} messages} :
+ \ensuremath{DropMessage(m)
+}}%
+\@xx{}%
+\@x{\@s{32.8} \.{\lor} Termination}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ The specification must start with the initial state and transition according
+}%
+\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ to \ensuremath{Next}.
+}%
+\@xx{}%
+\@x{ Spec \.{\defeq} Init \.{\land} {\Box} [ Next ]_{ vars}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ The spec should be type-safe
+}%
+\@xx{}%
+\@x{ {\THEOREM} Spec \.{\implies} {\Box} TypeOK}%
+\@pvspace{8.0pt}%
+\@x{}\bottombar\@xx{}%
+\end{document}
