@@ -40,49 +40,63 @@
 % Use the following at camera-ready time to suppress page numbers.
 % Comment it out when you first submit the paper for review.
 \thispagestyle{empty}
-
 \section*{Abstract}
 
-We present a protocol for payments across payment systems. Unlike previous approaches, this requires no global coordinating system or blockchain. It allows anyone with accounts on two or more \textit{ledgers} to make connections between them. \textit{Connectors} can be composed, creating a global graph of liquidity or \mbox{\textit{Interledger}}.
-% TODO should we capitalize Interledger?
+We present a protocol for payments across payment systems. It enables secure transfers between \textit{ledgers} through untrusted \textit{connectors}. Ledger-provided \textit{escrow} removes the need to trust the connectors, allowing new connections to be created by anyone with accounts on two or more ledgers. Unlike previous approaches, this protocol requires no global coordinating system or blockchain. Connections can be composed, bringing about the small-world network or ``six degrees of separation'' effect for payments. This enables the creation of a global graph of liquidity or \mbox{\textit{Interledger}}.
 
+% Unlike previous approaches, this requires no global coordinating system or blockchain. It allows anyone with accounts on two or more \textit{ledgers} to make connections between them. The protocol uses ledger-provided escrow to remove the need to trust the \mbox{\textit{connectors}}. Connections can be composed, bringing about the small-world network or ``six degrees of separation'' effect for payments. This enables the creation of a global graph of liquidity or \mbox{\textit{Interledger}}.
+
+% We present a protocol for payments across payment systems. Unlike previous approaches, this requires no global coordinating system or blockchain. It allows anyone with accounts on two or more \textit{ledgers} to make connections between them. The protocol uses ledger-provided escrow to remove the need to trust the \mbox{\textit{connectors}}. Connections can be composed, bringing about the small-world network or ``six degrees of separation'' effect for payments. This enables the creation of a global graph of liquidity or \mbox{\textit{Interledger}}.
+% Connections can be composed, creating a global graph of liquidity or \mbox{\textit{Interledger}} and bringing about the small-world network or ``six degrees of separation'' effect for payments.
 
 \section{Introduction}
 
-% TODO talk more about scalability
+% TODO the definitions of ledgers and connectors are redundant here and in the model section
 
-Sending money today within any single payment system or \textit{ledger} is relatively simple, fast and inexpensive. However, moving money between systems is cumbersome, slow and costly, if it is possible at all. Any new or smaller payment system struggles to build network effects and provide a useful experience for its users, as they are limited to transacting with others who already hold accounts on the same system.
+Sending money today within any single payment system or \textit{ledger} is relatively simple, fast and inexpensive. However, moving money between systems is cumbersome, slow and costly, if it is possible at all. 
 
-There are few connections between ledgers because the sender of a payment must trust the intermediaries not to walk away with the money. This presents a high barrier for creating new connections, and a select few trusted institutions are able to provide this function.
+The problem is that there is little or no competition amongst the intermediaries or \textit{connectors} facilitating payments between ledgers. There is little standardization amongst connectors and every connector must be trusted not to steal the sender's money. This creates significant barriers to entry for new would-be connectors and limits the options to a select group of highly trusted institutions.
 
-What is needed is a way to reduce the trust placed in the intermediaries facilitating payments between ledgers.
+% Few \textit{connectors} can be trusted not to abscond with the sender's money. 
+%Any new or smaller payment system struggles to build network effects and provide a useful experience for its users, as they are limited to transacting with others who already hold accounts on the same system.
+% There are few connections between ledgers because senders must trust the intermediaries not to abscond with their money.
+%There are few connections between ledgers because the sender of a payment must trust the intermediaries not to walk away with the money. This presents a high barrier for creating new connections, and a select few trusted institutions are able to provide this function.
+%What is needed is a way to reduce the trust placed in the intermediaries facilitating payments between ledgers.
 
-Lowering the barriers to creating more connections between the world's ledgers would create a more accessible, competitive and resilient global financial system. Interoperability would immediately give new payment systems the same network effects of the largest and most established systems. Parallel connections between ledgers would enable all payments to take advantage of a competitive market for the best rates and speed. The ability to chain payments through multiple intermediaries would enable any sender to pay any recipient, even if they do not hold accounts on the same ledgers and even if there is no direct connection between their ledgers.
+Creating connections between the world's ledgers that are secure
+% reliable, trustworthy
+by default would create a competitive market for fastest, cheapest payments and would  
+% enable payments between any sender and any recipient, due to the small-world network phenomenon (colloquially known as the ``six degrees of separation''). \cite{watts1998collective}\cite{albert1999internet} 
+bring about the small-world network phenomenon (commonly known as the ``six degrees of separation'') for payments. \cite{watts1998collective}\cite{albert1999internet}
 
-In this paper, we present a protocol for \mbox{\textit{interledger}} payments that removes the need for the sender and recipient to trust the \textit{connectors} facilitating payments between their ledgers. It uses ledger-provided escrow to guarantee the sender of a payment will either have a non-repudiable receipt confirming that the recipient has been paid, or their escrowed funds will be returned. This allows anyone to create new connections between ledgers of all types.
+In this paper, we present a protocol for \mbox{\textit{interledger}} payments that enables anyone with accounts on two ledgers to create connections between them. It uses ledger-provided \textit{escrow}---conditional locking of funds---to allow secure payments through untrusted connectors.
 
-Unlike previous approaches \cite{davies1989security} \cite{Bitcoin}\cite{schwartz2014ripple}\cite{wood2014ethereum}\cite{mazieresstellar}\cite{back2014enabling}\cite{poonbitcoin}, the protocol does not rely on any global coordinating system or ledger, centralized or decentralized, for processing payments. There is no shared global state, so it can scale to facilitate any volume of payments.
+The protocol is simple for ledgers to integrate---it only requires ledgers to enable escrowed transfers.
+Unlike previous approaches \cite{davies1989security} \cite{Bitcoin}\cite{schwartz2014ripple}\cite{wood2014ethereum}\cite{mazieresstellar}\cite{back2014enabling}\cite{poonbitcoin}, this protocol does not rely on any global coordinating system or ledger, centralized or decentralized, for processing payments.
 
-The protocol enables payments to be chained, giving all ledgers equal global reach. The ability to make frictionless cross-currency and "multi-hop" payments makes every item of value spendable anywhere---from fiat or cryptocurrencies, to commodities, loyalty points, computing resources and social credit.
+This protocol lowers the barriers to connecting the world's ledgers. Interoperability gives small and new payment systems the same network effects of the largest and most established systems. Parallel connections between ledgers allow all payments to take advantage of a competitive market for the best rates and speed. Connectors and ledgers can be scaled horizontally to handle unlimited payment volume. Finally, the ability to compose connectors into chains enables payments between any ledgers. This makes every item of value spendable anywhere---from fiat or cryptocurrencies, to commodities, loyalty points, computing resources and social credit.
 
 The protocol provides:
 \begin{itemize}
-\item Secure payments through arbitrary chains of untrusted intermediaries.
+\item Secure payments through untrusted connectors using ledger-provided escrow.
 \item A guarantee for the sender of a cryptographically signed receipt from the recipient or the return of their escrowed funds.
 \item Two modes of executing payments that provide safety and liveness: one under an assumption of eventual synchrony with some shared trust between the participants, and the other under an assumption of synchrony without any shared trust between the participants.
 \end{itemize}
 
+% TODO section 2 presents the overview of the protcol, 3 formalizes it and presents the atomic mode of execution
+The paper is organized as follows: Section \ref{sec:model} introduces the core protocol, including the actors involved and the need for ledger-provided escrow. Section \ref{sec:atomic} formalizes the protocol under the Atomic mode, which uses \textit{notaries} to ensure safe execution of the payment. Section \ref{sec:universal} presents the Universal mode, which uses bounded execution windows and participant incentives to enable payments between parties who do not share trust in any common system or institution. Sequence diagrams and the formal protocol specifications can be found in the Appendix.
 
-\section{A Model of Interledger Payments}
+
+\section{Interledger Payments}
+\label{sec:model}
 % Alternatively: Generalized Interledger Payments
 
-For interledger payments, we use a simple model consisting of \textit{ledgers} and \textit{connectors}.
+%For interledger payments, we use a simple model consisting of \textit{ledgers} and \textit{connectors}.
                  
-\subsection{Ledgers}
+%\subsection{Ledgers}
+Digital payment systems use \textit{ledgers} to track accounts and balances and to enable transfers between their users. A ledger may be used to track anything of value---from currency or stocks to physical goods and titles---and may be centralized or decentralized. \cite{Bitcoin}
 
-Any digital payment system must enable payments between users while preventing double spending. Transfers between users or accounts are recorded in a \textit{ledger}, which may be centralized or decentralized. \cite{Bitcoin}
-
-Figure \ref{fig:three-bells} shows an example book transfer from a sender Alice to a recipient Bob on a ledger where they both hold accounts.
+As illustrated in Figure \ref{fig:three-bells}, payments or \textit{book transfers} are trivial between accounts on the same ledger.
 
 \begin{figure}[ht]
     \centering
@@ -91,17 +105,14 @@ Figure \ref{fig:three-bells} shows an example book transfer from a sender Alice 
     \label{fig:three-bells}
 \end{figure}
 
-For the purposes of this model we consider a ledger to be a system for tracking and transferring any single asset type. It may track ownership of divisible assets such as currency or shares, or non-divisible assets such as titles. If a payment system supports multiple assets, it is seen as maintaining multiple ledgers.
+% For the purposes of this model we consider a ledger to be a system for tracking and transferring any single asset type. It may track ownership of divisible assets such as currency or shares, or non-divisible assets such as titles. If a payment system supports multiple assets, it is seen as maintaining multiple ledgers.
 
-Individuals and institutions select the ledgers they use based upon diverse sets of preferences and use cases. Every ledger offers different characteristics in terms of enforcement of property rights, transferability, deposit and withdrawal, chargebacks, fees and other policies. It is not practical to expect one set of characteristics to support all use cases \cite{back2014enabling}, therefore we believe that what is most needed is a reliable, neutral way to connect diverse ledgers.
+% Individuals and institutions select the ledgers they use based upon diverse sets of preferences and use cases. Every ledger offers different characteristics in terms of enforcement of property rights, transferability, deposit and withdrawal, chargebacks, fees and other policies. It is not practical to expect one set of characteristics to support all use cases \cite{back2014enabling}, therefore we believe that what is most needed is a reliable, neutral way to connect diverse ledgers.
 
-\subsection{Connectors}
+% \subsection{Connectors}
 
-A \textit{connector} is a system that facilitates interledger payments by coordinating book transfers between multiple ledgers and, if necessary, translating between their different data formats.
-
-Connectors accept a transfer into their account on one ledger in exchange for a transfer out of their account on another ledger. They earn the spread between the value of the two transfers and may charge additional fees to cover any costs or risks they assume.
-
-There are many possible arrangements that enable connectors to facilitate interledger payments: they may be operated by the same entity as one of the ledgers, by third parties with pre-funded accounts on both ledgers, or they may aggregate funds held by multiple other parties. The details of the arrangement do not matter from the outside, however, as long as they are capable of facilitating payments between multiple ledgers.
+A \textit{connector} is a system that facilitates interledger payments by coordinating book transfers on multiple ledgers. Connectors can also translate between different protocols used by their ledgers. As illustrated in Figure \ref{fig:connector}, connectors accept a transfer into their account on one ledger in exchange for a transfer out of their account on another ledger. 
+%They earn the spread between the value of the two transfers and may charge additional fees to cover any costs or risks they assume.
 
 \begin{figure}[ht]
     \centering
@@ -110,41 +121,78 @@ There are many possible arrangements that enable connectors to facilitate interl
     \label{fig:connector}
 \end{figure}
 
-More connectors can be added in parallel between ledgers to make their connection more robust and enable higher payment volume. Independently operated and designed connectors especially increase resiliency, as the failure of one is less likely to affect the others.
+% TODO talk here about how todays payments require the connectors to be altruistic or bound by legal contract
 
-Even in cases where there is no direct connection between two ledgers, payments can be made between them if there is a \textit{chain of connectors} connecting them. Money is transferred from the origin ledger to an intermediary ledger through a connector and then onwards through a second connector, and so on through to the receiving ledger.
+\newpage
+
+The problem with existing payment protocols is that the sender must trust the connector to follow through on paying the recipient and not to disappear with their money. Nothing technically prevents connectors from losing or stealing money, so connectors must be bound by reputation, service-level agreements (SLAs), and legal contracts to complete the payment correctly. This severely limits the set of institutions that can act as connectors, resulting in a highly uncompetitive and disconnected global payment system.
+
+\textbf{Ledger-provided escrow guarantees the sender that their funds will only be transferred to the connector once they receive proof that the recipient has been paid. That same escrow assures the connector that they will receive the sender's transfer once they complete their end of the agreement. This simple arrangement can be extended into arbitrarily long chains of connectors to facilitate payments between any sender and any recipient. This creates a global graph of liquidity or \textit{Interledger}.}
+
+% Multiple connectors can operate in parallel between two ledgers to increase the competitiveness and robustness of the connection.
+% More connectors can be added in parallel between ledgers to make their connection more robust and enable higher payment volume. Independently operated and designed connectors especially increase resiliency, as the failure of one is less likely to affect the others.
+% Composing connectors into chains can enable payments between any ledgers, no matter how distant they are in the global graph of liquidity.
+
+% Even in cases where there is no direct connection between two ledgers, payments can be made between them if there is a \textit{chain of connectors} connecting them. Money is transferred from the origin ledger to an intermediary ledger through a connector and then onwards through a second connector, and so on through to the receiving ledger.
 % TODO: Can we cite something that explains how these graph thingys get very easily very connected
 
-As illustrated in Figure \ref{fig:parallel-path}, individual payments can take advantage of the liquidity and rates offered by multiple connectors simultaneously. The protocol works the same way whether it uses single or parallel paths. For simplicity, the examples throughout the rest of the paper will discuss payments with only one connector between each ledger and only one book transfer per ledger.
+% As illustrated in Figure \ref{fig:parallel-path}, individual payments can take advantage of the liquidity and rates offered by multiple connectors simultaneously. The protocol works the same way whether it uses single or parallel paths. For simplicity, the examples throughout the rest of the paper will discuss payments with only one connector between each ledger and only one book transfer per ledger.
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/parallel-path.pdf}
-    \caption{Payment through two parallel connectors}
-    \label{fig:parallel-path}
-\end{figure}
+% \begin{figure}[ht]
+%     \centering
+%     \includegraphics[width=\columnwidth]{figures/parallel-path.pdf}
+%     \caption{Payment through two parallel connectors}
+%     \label{fig:parallel-path}
+% \end{figure}
 
-The global financial system can be made more accessible, competitive and resilient by lowering the barriers to entry for new connectors.
+% The global financial system can be made more accessible, competitive and resilient by lowering the barriers to entry for new connectors.
 
 \subsection{Byzantine and Rational Actors}
 
-Existing protocols handle the risks of payments failing or money being lost or stolen either by requiring both sender and recipient to use the same ledger, or by restricting the connector function to highly trusted intermediaries. A more open protocol for interledger payments must be able to protect against potentially faulty or malicious behavior by any of the actors involved.
+Unlike existing approaches, this protocol does not rely on trusted actors to facilitate interledger payments.
 
-The BAR (Byzantine, Altruistic, Rational) model introduced by \cite{aiyer2005bar} categorizes actors in algorithms involving cooperation between multiple independent parties. \textit{Altruistic} actors follow the protocol exactly. \textit{Rational} actors are self-interested and will follow or deviate from the protocol to maximize their short and long-term benefits. \textit{Byzantine} actors, originally introduced by \cite{lamport1982byzantine}, may deviate from the protocol for any reason, ranging from technical failure to deliberate attempts to harm other parties or simply impede the protocol.
+We use the BAR (Byzantine, Altruistic, Rational) model to categorize the actors in a payment. \textit{Altruistic} actors follow the protocol exactly. \textit{Rational} actors are self-interested and will follow or deviate from the protocol to maximize their short and long-term benefits. \textit{Byzantine} actors may deviate from the protocol for any reason, ranging from technical failure to deliberate attempts to harm other parties or simply impede the protocol. \cite{aiyer2005bar}
 
-A protocol is Byzantine Altruistic Rational Tolerant (BART) if it ``guarantees the specified set of safety and liveness properties in the presence of all rational deviations from the protocol.''\cite[p. 2]{aiyer2005bar}
+We assume all actors in the payment are either rational or Byzantine, unlike existing protocols that effectively assume connectors must be altruistic, or bound by factors external to the protocol. Altruistic actors may be used for certain optimizations, but they cannot be relied upon for safety or liveness in a truly open protocol for payments.
+% We assume that Ledgers, connectors, senders and recipients participate in and follow the protocol only if they benefit from doing so. Any actor or group of actors may be faulty or may conspire to obstruct the protocol or steal money from any of the other participants.
 
-For interledger payments, we assume all actors are either rational or Byzantine. Altruistic actors may speed up parts of the protocol, but they cannot be relied upon for safety or liveness. We assume that ledgers may be faulty and any combination of participants (the sender, recipient, or connectors) may conspire to obstruct the protocol or steal money from any of the other participants. 
+% The protocol protects against Byzantine faults. It does not, however, attempt to protect participants from Byzantine behavior by a ledger they directly hold accounts with. As a malicious ledger can arbitrarily change the balances of it's account holders, this protocol can only control the risks for participants who hold accounts on non-faulty ledgers.
+
+% For interledger payments, we assume all actors are either rational or Byzantine. Altruistic actors may speed up parts of the protocol, but they cannot be relied upon for safety or liveness. We assume that ledgers may be faulty and any combination of participants (the sender, recipient, or connectors) may conspire to obstruct the protocol or steal money from any of the other participants. 
 
 We assume that as rational actors, ledgers and connectors may require some fee to incentivize their participation in a payment. These fees may be paid in the flow of the payment, or out of band. In this paper, we will only discuss the details of fees necessary to mitigate risks and attacks specific to this algorithm.
 
 While ledgers may in practice exhibit Byzantine behavior, we do not attempt to protect the participants that directly hold accounts with such a ledger. A malicious ledger may arbitrarily change the balances of it's account holders, so this protocol can only attempt to isolate participants who hold accounts on non-faulty ledgers from risk.
 
-We assume that connectors will agree to participate in a payment only if they face negligible or manageable risk for doing so, and that they will charge fees accordingly. Connectors cannot be expected to deliver money on any destination ledger unless it is in their interest to do so.
+We assume that connectors will agree to participate in a payment only if they face negligible or manageable risk for doing so, and that they will charge fees accordingly. Connectors cannot be expected to deliver money on any destination ledger unless it is in their self-interest to do so.
 
 The senders and receivers of payments may attempt to overload, hobble or defraud any of the other actors involved.
 
-In the following sections we present a protocol for Byzantine Altruistic Rational Tolerant interledger payments. Section \ref{sec:atomic} presents the protocol using the Atomic execution mode, which provides atomicity while requiring some shared trust between the participants. Section \ref{sec:universal} presents the Universal execution mode, which requires no shared trust amongst the participants and uses participants' incentives to provide safety and liveness.
+% In the following sections we present a protocol for Byzantine Altruistic Rational Tolerant interledger payments. Section \ref{sec:atomic} presents the protocol using the Atomic execution mode, which provides atomicity while requiring some shared trust between the participants. Section \ref{sec:universal} presents the Universal execution mode, which requires no shared trust amongst the participants and uses participants' incentives to provide safety and liveness.
+
+\subsection{Cryptographic Escrow}
+
+
+
+% \subsection{Escrow}
+
+Ledger-provided escrow isolates each participant from the risks of failure or malicious behavior by others involved in the payment. It provides the financial equivalent of the phases in the Two-Phase Commit Protocol. \cite{Gray:1978:NDB:647433.723863}\cite{gray2006consensus}
+
+Each participant relies upon their ledger to escrow funds and release them only when some predefined conditions are met. The sender ensures that their funds are released only upon delivery of some non-repudiable proof from the recipient that they have been paid. The recipient is assured by their ledger that they will be paid as soon as they present a non-repudiable receipt. Connectors rely on their ledgers' escrow to protect themselves from risk.
+
+\textbf{Providing escrowed transfers is the main requirement for ledgers to enable secure interledger payments.}
+
+Cryptographic signatures are a simple way for ledgers to securely validate the outcome of the external conditions upon which a transfer is escrowed. Any one-way function can be used.\cite{rompel1990one} Using asymmetric cryptography, the ledger escrows funds pending the presentation of a valid signature for a pre-defined public key and message or hash. The ledger can then validate the signature and act accordingly.
+
+Figure \ref{fig:transfer-states} illustrates the states of a transfer. First, a transfer is \textit{proposed} to the participants, but no changes are made to the ledger. Once affected account holders have authorized the transfer, the ledger checks that funds are available and that all of its rules and policies have been satisfied. The ledger places the funds in escrow and the transfer is \textit{prepared}. If the execution condition $e$ is fulfilled, the transfer is \textit{executed}. If any of the checks fail, or if an abort condition $e'$ is fulfilled, the transfer is \textit{aborted} and the escrowed funds are returned to their originator.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/transfer-states.pdf}
+    \caption{Transfer states}
+    \label{fig:transfer-states}
+\end{figure}
+
 
 \section{Atomic Interledger Payments}
 \label{sec:atomic}
@@ -161,7 +209,7 @@ Interledger payments consist of transfers on different ledgers. If the payment p
 
 Executing transfers atomically across multiple ledgers requires a \textit{transaction commit protocol}. The simplest such protocol is the Two-Phase Commit, in which all systems involved first indicate their readiness to complete the transaction, and then execute or abort based on whether all of the other systems have agreed. The basic form of that protocol uses a \textit{transaction manager} to collect the responses of the various system and disseminate the decision. Fault tolerance can be added to the Two-Phase Commit by replacing the single transaction manager with a group of coordinators that use a consensus algorithm to agree on the outcome of the payment. \cite{gray2006consensus}
 
-The Atomic execution mode of the interledger payment protocol uses a Byzantine fault-tolerant agreement algorithm amongst an ad-hoc group of \textit{notaries} to coordinate the preparation and then execution of the component transfers. It has the same safety and liveness properties as the consensus algorithm used amongst the notaries. Additionally, it guarantees that the sender receive a non-repudiable payment receipt from the recipient if funds are transferred.
+The Atomic execution mode of the interledger payment protocol uses a Byzantine fault-tolerant agreement algorithm amongst an ad-hoc group of \textit{notaries} to coordinate the preparation and then execution of the component transfers. It has the same safety and liveness properties as the consensus algorithm used amongst the notaries. Additionally, it guarantees that the sender receive a cryptographically signed payment receipt from the recipient if funds are transferred.
 
 \begin{figure*}[th!]
     \centering
@@ -170,24 +218,7 @@ The Atomic execution mode of the interledger payment protocol uses a Byzantine f
     \label{fig:n-bells}
 \end{figure*}
 
-Figure \ref{fig:n-bells} shows a payment through a chain of participants $P$ and ledgers $L$. There are $n$ participants in $P$ and the payment consists of $n-1$ book transfers $B$ on $n-1$ ledgers, such that $ \left\vert{P}\right\vert = n $ and $\left\vert{B}\right\vert = \left\vert{L}\right\vert = n-1 $. The first participant, the sender $p_1$, has an account on ledger $\ell_1$. The last participant, the recipient $p_n$, has an account on ledger $\ell_{n-1}$. The other participants $ \{ p_i \mid i \in \mathbb{Z}^+ \land 1 < i < n \} $ in the chain are the connectors, which are referred to as $C$ for convenience. Each connector $p_i \in C$ has accounts on ledgers $\ell_{i-1}$ and $\ell_i$ and facilitates payments between them.
-
-\subsection{Escrow}
-
-The main requirement for ledgers to enable interledger payments for their account holder is to provide functionality for escrowed transfers. Escrow provides the financial equivalent of the phases in the Two-Phase Commit Protocol. \cite{Gray:1978:NDB:647433.723863}
-
-Escrow isolates each participant from the risks of failure or malicious behavior elsewhere in the payment chain. Each participant relies upon their ledger to escrow funds and release them only when some predefined conditions are met.
-
-A simple way for ledgers to securely validate the outcome of the escrow conditions is using cryptographic signatures. Any one-way function can be used.\cite{rompel1990one} Using asymmetric cryptography, the ledger escrows funds pending the presentation of a valid signature for a pre-defined public key and message or hash. The ledger can validate the signature when it is received and act accordingly.
-
-Figure \ref{fig:transfer-states} illustrates the possible states of a transfer. When a transfer is first \textit{proposed}, the details of the transfer are shared with the participants, but no changes are made to the ledger. As soon as the affected account holders have authorized the transfer, the ledger checks that the funds are available and that all of its rules and policies have been satisfied. The ledger places the funds in escrow and the transfer is now \textit{prepared}. If the execution condition $e$ is fulfilled, the transfer is \textit{executed}. If any of the checks fail, or if an abort condition $e'$ is fulfilled, the transfer is \textit{aborted} and the escrowed funds are returned to their originator.
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=\columnwidth]{figures/transfer-states.pdf}
-    \caption{Transfer states}
-    \label{fig:transfer-states}
-\end{figure}
+Figure \ref{fig:n-bells} shows a payment through a chain of participants $P$ and ledgers $L$. There are $n$ participants in $P$ and the payment consists of $n-1$ book transfers $B$ on $n-1$ ledgers, such that $ \left\vert{P}\right\vert = n $ and $\left\vert{B}\right\vert = \left\vert{L}\right\vert = n-1 $. The first participant, the sender $p_1$, has an account on ledger $\ell_1$. The last participant, the recipient $p_n$, has an account on ledger $\ell_{n-1}$. The other participants $p_i$ where $ \{ i \in \mathbb{Z}^+ \land 1 < i < n \} $ in the chain are the connectors, which are referred to as $C$ for convenience. Each connector $p_i \in C$ has accounts on ledgers $\ell_{i-1}$ and $\ell_i$ and facilitates payments between them.
 
 
 \subsection{Notaries}
@@ -305,7 +336,7 @@ Safety means that if one non-faulty ledger transitions its transfer to the \text
 
 Given the safety of the consensus algorithm used by the notaries, 
 % TODO add citation
-we know that all ledgers will only receive one of either: $f + 1$ \textsc{commit}, or $f + 1$ \textsc{abort} messages from notaries. A correct ledger only executes the transfer when it has received $f + 1$ \textsc{commit} messages which precludes the possibility that any other correct ledger has aborted their transfer. Equally, a correct ledger only aborts the transfer when it has received $f + 1$ \textsc{abort} messages which precludes the possibility that any other correct ledger has received $f + 1$ \textsc{commit} messages and aborted their transfer.
+we know that all ledgers will only receive one of either: $f + 1$ \textsc{execute}, or $f + 1$ \textsc{abort} messages from notaries. A correct ledger only executes the transfer when it has received $f + 1$ \textsc{execute} messages which precludes the possibility that any other correct ledger has aborted their transfer. Equally, a correct ledger only aborts the transfer when it has received $f + 1$ \textsc{abort} messages which precludes the possibility that any other correct ledger has received $f + 1$ \textsc{execute} messages and aborted their transfer.
 
 Therefore our theorem holds.
 % TODO make this an actual theorem
@@ -314,7 +345,7 @@ Therefore our theorem holds.
 
 Liveness means that every non-faulty ledger connected to at least one non-faulty, rational participant will eventually execute or abort its transfer.
 
-From the liveness property of the underlying agreement protocol, we know that the notaries will eventually decide to either \textsc{commit} or \textsc{abort} and broadcast that decision to the participants. Each ledger is connected to at least two participants. If one of these participants is correct, it will forward the decision to the ledger.
+From the liveness property of the underlying agreement protocol, we know that the notaries will eventually decide to either \textsc{execute} or \textsc{abort} and broadcast that decision to the participants. Each ledger is connected to at least two participants. If one of these participants is correct, it will forward the decision to the ledger.
 
 Note that we could provide a stronger liveness guarantee if notaries could broadcast directly to the ledgers. However, in practice some ledgers use proprietary protocols or private networks, so we cannot rely on the fact that the notaries can reach them directly.
 
@@ -324,9 +355,9 @@ Note that we could provide a stronger liveness guarantee if notaries could broad
 \subsection{Fees}
 \label{subsec:fees}
 
-Each connector in $C$ incurs some costs and risks for participating in a payment using the Universal mode, which can be priced into the connectors' fees.
+Each connector in $C$ incurs some costs and risks for participating in a payment, which can be priced into the connectors' fees.
 
-When trading different assets, connectors in $C$ effectively write the sender $p_1$ an American option \cite{black1973pricing}\cite{brennan1977valuation}
+When trading different assets, connectors in $C$ effectively write the sender $p_1$ an \textit{American option} \cite{black1973pricing}\cite{brennan1977valuation}
 which, on exercise, swaps an asset on one ledger for an equivalent asset on another ledger.
 In addition to the factors considered in standard option pricing, the connector should also account for the following attack in its fee.
 
@@ -484,13 +515,13 @@ If the recipient chooses an honest ledger with \textit{receipt-privacy}, they ar
 
 \section{Conclusion}
 
-We have proposed a protocol for interledger payments across an arbitrary chain of ledgers and connectors. The protocol uses ledger-provided escrow based on cryptographic conditions to guarantee the sender of a payment will either have cryptographic receipt confirming that the recipient has been paid or their escrowed funds will be returned.
+We have proposed a protocol for secure interledger payments across an arbitrary chain of ledgers and connectors. It uses ledger-provided escrow based on cryptographic conditions to remove the need to trust the connectors.
 
-The Atomic mode of the protocol provides atomicity for payment chains in which the participants can agree upon a group of notaries. The Universal mode uses the incentives of rational actors to enable payments between participants that do not all share trust in any institution or system.
+The Atomic mode of the protocol provides atomicity for payment chains in which the participants can agree upon a group of notaries. The Universal mode uses the incentives of rational actors to enable practical payments between participants that do not all share trust in any institution or system.
 
 As this protocol does not rely on any single system for processing payments, there is no global scalability limit. Payments can be as fast and cheap as the constituent ledgers and connectors allow and transaction details are private to their participants. The separation of concerns and the minimal standardization requirements enable continuous optimization and competition between connectors and between ledgers.
 
-Removing the need to trust the connector enables anyone with accounts on two or more ledgers to make connections between them. Connectors can be composed, making payments and finance more accessible, competitive and resilient. This enables the creation of a global graph of liquidity or \textit{Interledger}.
+Removing the need to trust the connector enables anyone with accounts on two or more ledgers to make connections between them. Connectors can be composed, making payments and the financial system more accessible, competitive and resilient. This enables the creation of a global graph of liquidity or \textit{Interledger}.
 
 % DTM.
 
