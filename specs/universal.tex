@@ -18,16 +18,17 @@
 \stepcounter{section}
 \stepcounter{subsection}
 \stepcounter{subsection}
-\setcounter{page}{12}
-\subsection{Formal Specification: Atomic mode}
-\label{sec:atomic-spec}
+\stepcounter{subsection}
+\setcounter{page}{19}
+\subsection{Formal Specification: Universal mode}
+\label{sec:universal-spec}
 \tlatex
 \setboolean{shading}{true}
-\@x{}\moduleLeftDash\@xx{ {\MODULE} Atomic}\moduleRightDash\@xx{}%
+\@x{}\moduleLeftDash\@xx{ {\MODULE} Universal}\moduleRightDash\@xx{}%
 \begin{lcom}{0}%
 \begin{cpar}{0}{T}{F}{2.5}{0}{}%
 Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
- Interledger Protocol \ensuremath{Atomic} (\ensuremath{ILP}/A)
+ Interledger Protocol \ensuremath{Universal} (\ensuremath{ILP}/\ensuremath{U})
 \end{cpar}%
 \vshade{10.0}%
 \begin{cpar}{1}{F}{F}{0}{0}{}%
@@ -50,7 +51,7 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \end{cpar}%
 \end{lcom}%
 \@pvspace{8.0pt}%
-\@x{ {\EXTENDS} Naturals ,\, Sequences ,\, Bags ,\, TLC}%
+\@x{ {\EXTENDS} Naturals ,\, Sequences ,\, FiniteSets ,\, Bags ,\, TLC}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -68,24 +69,17 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
- The notary
-}%
-\@xx{}%
-\@x{ {\CONSTANTS} Notary}%
-\@pvspace{8.0pt}%
-\@x{}%
-\@y{\@s{0}%
  Sender states
 }%
 \@xx{}%
-\@x{ {\CONSTANTS} S\_Ready ,\, S\_Waiting ,\, S\_Done}%
+\@x{ {\CONSTANTS} S\_Ready ,\, S\_ProposalWaiting ,\, S\_Waiting ,\, S\_Done}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
- Notary states
+ Connector states
 }%
 \@xx{}%
-\@x{ {\CONSTANTS} N\_Waiting ,\, N\_Committed ,\, N\_Aborted}%
+\@x{ {\CONSTANTS} C\_Ready ,\, C\_Proposed}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -101,7 +95,7 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@xx{}%
 \@x{ {\CONSTANTS} PrepareRequest ,\, ExecuteRequest ,\, AbortRequest ,\,}%
 \@x{\@s{54.75} PrepareNotify ,\, ExecuteNotify ,\, AbortNotify ,\,}%
-\@x{\@s{54.75} SubmitReceiptRequest}%
+\@x{\@s{54.75} SubpaymentProposalRequest ,\, SubpaymentProposalResponse}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -116,6 +110,13 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
  Global variables
 }%
 \@xx{}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Under synchrony we are allowed to have a global clock
+}%
+\@xx{}%
+\@x{ {\VARIABLE} clock}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -146,10 +147,38 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
+ Whether the sender has received a response from a given connector
+}%
+\@xx{}%
+\@x{ {\VARIABLE} senderProposalResponses}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
  All sender variables
 }%
 \@xx{}%
-\@x{ senderVars \.{\defeq} {\langle} senderState {\rangle}}%
+ \@x{ senderVars \.{\defeq} {\langle} senderState ,\, senderProposalResponses
+ {\rangle}}%
+\@x{}\midbar\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ Connector variables
+}%
+\@xx{}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ State of the connector (\ensuremath{C\_Ready}, \ensuremath{C\_Proposed})
+}%
+\@xx{}%
+\@x{ {\VARIABLE} connectorState}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ All sender variables
+}%
+\@xx{}%
+\@x{ connectorVars \.{\defeq} {\langle} connectorState {\rangle}}%
 \@x{}\midbar\@xx{}%
 \@x{}%
 \@y{\@s{0}%
@@ -168,31 +197,18 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
+ The timeouts for each of the the transfers
+}%
+\@xx{}%
+\@x{ {\VARIABLE} ledgerExpiration}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
  All ledger variables
 }%
 \@xx{}%
-\@x{ ledgerVars \.{\defeq} {\langle} ledgerState {\rangle}}%
-\@x{}\midbar\@xx{}%
-\@x{}%
-\@y{\@s{0}%
- Notary variables
-}%
-\@xx{}%
-\@pvspace{8.0pt}%
-\@x{}%
-\@y{\@s{0}%
- State of the notary (\ensuremath{N\_Waiting}, \ensuremath{N\_Committed},
- \ensuremath{N\_Aborted})
-}%
-\@xx{}%
-\@x{ {\VARIABLE} notaryState}%
-\@pvspace{8.0pt}%
-\@x{}%
-\@y{\@s{0}%
- All notary variables
-}%
-\@xx{}%
-\@x{ notaryVars \.{\defeq} {\langle} notaryState {\rangle}}%
+ \@x{ ledgerVars \.{\defeq} {\langle} ledgerState ,\, ledgerExpiration
+ {\rangle}}%
 \@x{}\midbar\@xx{}%
 \@pvspace{8.0pt}%
 \@x{}%
@@ -200,8 +216,8 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
  All variables; used for stuttering (asserting state hasn\mbox{'}t changed)
 }%
 \@xx{}%
- \@x{ vars \.{\defeq} {\langle} messages ,\, senderVars ,\, ledgerVars ,\,
- notaryVars {\rangle}}%
+ \@x{ vars \.{\defeq} {\langle} clock ,\, messages ,\, senderVars ,\,
+ connectorVars ,\, ledgerVars {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}\midbar\@xx{}%
 \@x{}%
@@ -300,6 +316,28 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
  \@x{ Connector \.{\defeq} Participant \.{\,\backslash\,} \{ Sender ,\,
  Recipient \}}%
 \@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ The clock value we expect to be at after the proposal phase
+}%
+\@xx{}%
+\@x{ ClockAfterProposal \.{\defeq} 2 \.{*} Cardinality ( Connector ) \.{+} 2}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ The clock value we expect after the preparation phase
+}%
+\@xx{}%
+ \@x{ ClockAfterPrepare \.{\defeq} ClockAfterProposal \.{+} 2 \.{*}
+ Cardinality ( Ledger ) \.{+} 1}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ The clock value we expect to be at after the execution phase
+}%
+\@xx{}%
+ \@x{ ClockAfterExecution \.{\defeq} ClockAfterPrepare \.{+} 2 \.{*}
+ Cardinality ( Ledger ) \.{+} 1}%
 \@x{}\midbar\@xx{}%
 \@x{}%
 \@y{\@s{0}%
@@ -307,12 +345,18 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 }%
 \@xx{}%
 \@pvspace{8.0pt}%
-\@x{ TypeOK \.{\defeq} \.{\land} IsABag ( messages )}%
- \@x{\@s{56.14} \.{\land} senderState \.{\in} \{ S\_Ready ,\, S\_Waiting ,\,
- S\_Done \}}%
- \@x{\@s{56.14} \.{\land} ledgerState\@s{3.06} \.{\in} [ Ledger
- \.{\rightarrow} \{ L\_Proposed ,\, L\_Prepared ,\, L\_Executed ,\,
- L\_Aborted \} ]}%
+\@x{ TypeOK \.{\defeq} \.{\land} clock \.{\in} Nat}%
+\@x{\@s{56.14} \.{\land} IsABag ( messages )}%
+ \@x{\@s{56.14} \.{\land} senderState \.{\in} \{ S\_Ready ,\,
+ S\_ProposalWaiting ,\, S\_Waiting ,\, S\_Done \}}%
+ \@x{\@s{56.14} \.{\land} senderProposalResponses \.{\in} [ Connector
+ \.{\rightarrow} {\BOOLEAN} ]}%
+ \@x{\@s{56.14} \.{\land} connectorState \.{\in} [ Connector \.{\rightarrow}
+ \{ C\_Ready ,\, C\_Proposed \} ]}%
+ \@x{\@s{56.14} \.{\land} ledgerState \.{\in} [ Ledger \.{\rightarrow} \{
+ L\_Proposed ,\, L\_Prepared ,\, L\_Executed ,\, L\_Aborted \} ]}%
+ \@x{\@s{56.14} \.{\land} ledgerExpiration \.{\in} [ Ledger \.{\rightarrow}
+ Nat ]}%
 \@pvspace{8.0pt}%
 \@x{ Consistency \.{\defeq}}%
  \@x{\@s{16.4} \A\, l1 ,\, l2 \.{\in} Ledger \.{:} {\lnot} \.{\land}
@@ -329,17 +373,23 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 }%
 \@xx{}%
 \@pvspace{8.0pt}%
-\@x{ InitSenderVars\@s{0.27} \.{\defeq} \.{\land} senderState \.{=} S\_Ready}%
+\@x{ InitSenderVars \.{\defeq} \.{\land} senderState \.{=} S\_Ready}%
+ \@x{\@s{85.43} \.{\land} senderProposalResponses \.{=} [ i \.{\in} Connector
+ \.{\mapsto} {\FALSE} ]}%
 \@pvspace{8.0pt}%
- \@x{ InitLedgerVars\@s{1.67} \.{\defeq} \.{\land} ledgerState\@s{3.06} \.{=}
- [ i \.{\in} Ledger \.{\mapsto} L\_Proposed ]}%
+ \@x{ InitConnectorVars \.{\defeq} connectorState \.{=} [ i \.{\in} Connector
+ \.{\mapsto} C\_Ready ]}%
 \@pvspace{8.0pt}%
-\@x{ InitNotaryVars \.{\defeq} \.{\land} notaryState \.{=} N\_Waiting}%
+ \@x{ InitLedgerVars \.{\defeq} \.{\land} ledgerState \.{=} [ i\@s{3.38}
+ \.{\in} Ledger \.{\mapsto} L\_Proposed ]}%
+ \@x{\@s{84.03} \.{\land} ledgerExpiration \.{=} [ i \.{\in} Ledger
+ \.{\mapsto} ClockAfterExecution \.{-} i ]}%
 \@pvspace{8.0pt}%
-\@x{ Init \.{\defeq} \.{\land} messages \.{=} EmptyBag}%
+\@x{ Init \.{\defeq} \.{\land} clock \.{=} 0}%
+\@x{\@s{35.70} \.{\land} messages \.{=} EmptyBag}%
 \@x{\@s{35.70} \.{\land} InitSenderVars}%
+\@x{\@s{35.70} \.{\land} InitConnectorVars}%
 \@x{\@s{35.70} \.{\land} InitLedgerVars}%
-\@x{\@s{35.70} \.{\land} InitNotaryVars}%
 \@pvspace{8.0pt}%
 \@x{}\midbar\@xx{}%
 \@x{}%
@@ -350,33 +400,36 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
- Participant \ensuremath{i} starts off the chain
+ Participant \ensuremath{i} proposes all the subpayments
 }%
 \@xx{}%
-\@x{ Start ( i ) \.{\defeq}}%
+\@x{ StartProposalPhase ( i ) \.{\defeq}}%
 \@x{\@s{16.4} \.{\land} senderState \.{=} S\_Ready}%
+\@x{\@s{16.4} \.{\land} senderState \.{'} \.{=} S\_ProposalWaiting}%
+\@x{\@s{16.4} \.{\land} Broadcast ( \{ [}%
+\@x{\@s{35.71} mtype\@s{13.68} \.{\mapsto} SubpaymentProposalRequest ,\,}%
+\@x{\@s{35.71} msource\@s{4.1} \.{\mapsto} i ,\,}%
+\@x{\@s{35.71} mdest\@s{13.74} \.{\mapsto} k}%
+\@x{\@s{27.51} ] \.{:} k \.{\in} Connector \} )}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} ledgerVars ,\, connectorVars
+ ,\, senderProposalResponses {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Participant \ensuremath{i} starts off the preparation chain
+}%
+\@xx{}%
+\@x{ StartPreparationPhase ( i ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\land} senderState \.{=} S\_ProposalWaiting}%
+ \@x{\@s{16.4} \.{\land} \E\, p \.{\in} {\DOMAIN} senderProposalResponses
+ \.{:} senderProposalResponses [ p ]}%
 \@x{\@s{16.4} \.{\land} senderState \.{'} \.{=} S\_Waiting}%
  \@x{\@s{16.4} \.{\land} Send ( [ mtype\@s{9.58} \.{\mapsto} PrepareRequest
  ,\,}%
 \@x{\@s{56.16} msource \.{\mapsto} i ,\,}%
 \@x{\@s{56.16} mdest\@s{9.64} \.{\mapsto} i \.{+} 1 ] )}%
- \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} ledgerVars ,\, notaryVars
- {\rangle}}%
-\@pvspace{8.0pt}%
-\@x{}%
-\@y{\@s{0}%
- Notary times out
-}%
-\@xx{}%
-\@x{ NotaryTimeout \.{\defeq}}%
-\@x{\@s{16.4} \.{\land} notaryState \.{=} N\_Waiting}%
-\@x{\@s{16.4} \.{\land} notaryState \.{'} \.{=} N\_Aborted}%
-\@x{\@s{16.4} \.{\land} Broadcast (}%
-\@x{\@s{48.01} \{ [ mtype\@s{13.68} \.{\mapsto} AbortRequest ,\,}%
-\@x{\@s{55.78} msource\@s{4.10} \.{\mapsto} Notary ,\,}%
-\@x{\@s{55.78} mdest\@s{13.74} \.{\mapsto} k ] \.{:} k \.{\in} Ledger \} )}%
- \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars
- {\rangle}}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} ledgerVars ,\, connectorVars
+ ,\, senderProposalResponses {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -390,8 +443,46 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@x{\@s{16.4} \.{\land} Send ( [ mtype\@s{9.58} \.{\mapsto} AbortNotify ,\,}%
 \@x{\@s{56.16} msource \.{\mapsto} l ,\,}%
 \@x{\@s{56.16} mdest\@s{9.64} \.{\mapsto} l \.{-} 1 ] )}%
- \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, notaryVars
- {\rangle}}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, connectorVars
+ ,\, ledgerExpiration {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Transfer times out
+}%
+\@xx{}%
+\@x{ LedgerTimeout ( l ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\land} {\lnot} IsFinalLedgerState ( ledgerState [ l ] )}%
+\@x{\@s{16.4} \.{\land} ledgerExpiration [ l ] \.{\leq} clock}%
+ \@x{\@s{16.4} \.{\land} ledgerState \.{'} \.{=} [ ledgerState {\EXCEPT}
+ {\bang} [ l ] \.{=} L\_Aborted ]}%
+\@x{\@s{16.4} \.{\land} Send ( [ mtype\@s{9.58} \.{\mapsto} AbortNotify ,\,}%
+\@x{\@s{56.16} msource \.{\mapsto} l ,\,}%
+\@x{\@s{56.16} mdest\@s{9.64} \.{\mapsto} l \.{-} 1 ] )}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, connectorVars
+ ,\, ledgerExpiration {\rangle}}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ If no messages are in flight and the sender isn\mbox{'}t doing anything,
+ advance the
+}%
+\@xx{}%
+\@x{}%
+\@y{\@s{0}%
+ clock
+}%
+\@xx{}%
+\@x{ NothingHappens \.{\defeq}}%
+ \@x{\@s{16.4} \.{\land} clock \.{\leq} Max ( \{ ledgerExpiration [ x ] \.{:}
+ x \.{\in} Ledger \} )}%
+\@x{\@s{16.4} \.{\land} BagCardinality ( messages ) \.{=} 0}%
+\@x{\@s{16.4} \.{\land} senderState \.{\neq} S\_Ready}%
+\@x{\@s{16.4} \.{\land} \.{\lor} senderState \.{\neq} S\_ProposalWaiting}%
+ \@x{\@s{27.51} \.{\lor} \A\, p \.{\in} {\DOMAIN} senderProposalResponses
+ \.{:} {\lnot} senderProposalResponses [ p ]}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} messages ,\, senderVars ,\,
+ connectorVars ,\, ledgerVars {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}\midbar\@xx{}%
 \@x{}%
@@ -408,7 +499,8 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
- Ledger \ensuremath{i} receives a Prepare request from process \ensuremath{j
+ Ledger \ensuremath{i} receives a Prepare request from participant
+ \ensuremath{j
 }}%
 \@xx{}%
 \@x{ LedgerHandlePrepareRequest ( i ,\, j ,\, m ) \.{\defeq}}%
@@ -416,18 +508,20 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
  L\_Proposed}%
 \@x{\@s{77.16} \.{\land} j \.{=} i \.{-} 1}%
 \@x{\@s{16.4} \.{\IN} \.{\lor} \.{\land} valid}%
+\@x{\@s{47.91} \.{\land} i \.{\in} Ledger}%
  \@x{\@s{47.91} \.{\land} ledgerState \.{'} \.{=} [ ledgerState {\EXCEPT}
  {\bang} [ i ] \.{=} L\_Prepared ]}%
  \@x{\@s{47.91} \.{\land} Reply ( [ mtype\@s{9.58} \.{\mapsto} PrepareNotify
  ,\,}%
 \@x{\@s{90.47} msource \.{\mapsto} i ,\,}%
 \@x{\@s{90.47} mdest\@s{9.64} \.{\mapsto} i \.{+} 1 ] ,\, m )}%
- \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, notaryVars
- {\rangle}}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, connectorVars
+ ,\, ledgerExpiration {\rangle}}%
 \@x{\@s{36.79} \.{\lor} \.{\land} {\lnot} valid}%
+\@x{\@s{47.91} \.{\land} i \.{\in} Ledger}%
 \@x{\@s{47.91} \.{\land} Discard ( m )}%
- \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
- notaryVars {\rangle}}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, connectorVars
+ ,\, ledgerVars {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -437,44 +531,22 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@x{ LedgerHandleExecuteRequest ( i ,\, j ,\, m ) \.{\defeq}}%
  \@x{\@s{16.4} \.{\LET} valid \.{\defeq} \.{\land} ledgerState [ i ] \.{=}
  L\_Prepared}%
-\@x{\@s{77.16} \.{\land} j \.{=} Notary}%
+\@x{\@s{77.16} \.{\land} ledgerExpiration [ i ] \.{>} clock}%
+\@x{\@s{77.16} \.{\land} m . mreceipt \.{=} R\_ReceiptSignature}%
 \@x{\@s{16.4} \.{\IN} \.{\lor} \.{\land} valid}%
  \@x{\@s{47.91} \.{\land} ledgerState \.{'} \.{=} [ ledgerState {\EXCEPT}
  {\bang} [ i ] \.{=} L\_Executed ]}%
- \@x{\@s{47.91} \.{\land} Reply ( [ mtype\@s{9.58} \.{\mapsto} ExecuteNotify
+ \@x{\@s{47.91} \.{\land} Reply ( [ mtype\@s{12.29} \.{\mapsto} ExecuteNotify
  ,\,}%
-\@x{\@s{90.47} msource \.{\mapsto} i ,\,}%
-\@x{\@s{90.47} mdest\@s{9.64} \.{\mapsto} i \.{-} 1 ] ,\, m )}%
- \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, notaryVars
- {\rangle}}%
+\@x{\@s{90.47} msource\@s{2.71} \.{\mapsto} i ,\,}%
+\@x{\@s{90.47} mdest\@s{12.35} \.{\mapsto} i \.{-} 1 ,\,}%
+\@x{\@s{90.47} mreceipt\@s{1.49} \.{\mapsto} m . mreceipt ] ,\, m )}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, connectorVars
+ ,\, ledgerExpiration {\rangle}}%
 \@x{\@s{36.79} \.{\lor} \.{\land} {\lnot} valid}%
 \@x{\@s{47.91} \.{\land} Discard ( m )}%
- \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
- notaryVars {\rangle}}%
-\@pvspace{8.0pt}%
-\@x{}%
-\@y{\@s{0}%
- Ledger \ensuremath{i} receives an Abort request from process \ensuremath{j
-}}%
-\@xx{}%
-\@x{ LedgerHandleAbortRequest ( i ,\, j ,\, m ) \.{\defeq}}%
- \@x{\@s{16.4} \.{\LET} valid \.{\defeq} \.{\land} \.{\lor} ledgerState [ i ]
- \.{=} L\_Proposed}%
-\@x{\@s{88.27} \.{\lor} ledgerState [ i ] \.{=} L\_Prepared}%
-\@x{\@s{77.16} \.{\land} j \.{=} Notary}%
-\@x{\@s{16.4} \.{\IN} \.{\lor} \.{\land} valid}%
- \@x{\@s{47.91} \.{\land} ledgerState \.{'} \.{=} [ ledgerState {\EXCEPT}
- {\bang} [ i ] \.{=} L\_Aborted ]}%
- \@x{\@s{47.91} \.{\land} Reply ( [ mtype\@s{9.58} \.{\mapsto} AbortNotify
- ,\,}%
-\@x{\@s{90.47} msource \.{\mapsto} i ,\,}%
-\@x{\@s{90.47} mdest\@s{9.64} \.{\mapsto} i \.{-} 1 ] ,\, m )}%
- \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, notaryVars
- {\rangle}}%
-\@x{\@s{36.79} \.{\lor} \.{\land} {\lnot} valid}%
-\@x{\@s{47.91} \.{\land} Discard ( m )}%
- \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
- notaryVars {\rangle}}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, connectorVars
+ ,\, ledgerVars {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -486,8 +558,19 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@x{\@s{27.51} \.{\land} LedgerHandlePrepareRequest ( i ,\, j ,\, m )}%
 \@x{\@s{16.4} \.{\lor} \.{\land} m . mtype \.{=} ExecuteRequest}%
 \@x{\@s{27.51} \.{\land} LedgerHandleExecuteRequest ( i ,\, j ,\, m )}%
-\@x{\@s{16.4} \.{\lor} \.{\land} m . mtype \.{=} AbortRequest}%
-\@x{\@s{27.51} \.{\land} LedgerHandleAbortRequest ( i ,\, j ,\, m )}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Sender receives a \ensuremath{SubpaymentProposal} request
+}%
+\@xx{}%
+\@x{ SenderHandleSubpaymentProposalResponse ( i ,\, j ,\, m ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\land} i \.{=} Sender}%
+ \@x{\@s{16.4} \.{\land} senderProposalResponses \.{'} \.{=} [
+ senderProposalResponses {\EXCEPT} {\bang} [ j ] \.{=} {\TRUE} ]}%
+\@x{\@s{16.4} \.{\land} Discard ( m )}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} connectorVars ,\, ledgerVars
+ ,\, senderState {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -498,12 +581,12 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@x{\@s{16.4} \.{\lor} \.{\land} senderState \.{=} S\_Waiting}%
 \@x{\@s{27.51} \.{\land} senderState \.{'} \.{=} S\_Done}%
 \@x{\@s{27.51} \.{\land} Discard ( m )}%
- \@x{\@s{27.51} \.{\land} {\UNCHANGED} {\langle} ledgerVars ,\, notaryVars
- {\rangle}}%
+ \@x{\@s{27.51} \.{\land} {\UNCHANGED} {\langle} ledgerVars ,\, connectorVars
+ ,\, senderProposalResponses {\rangle}}%
 \@x{\@s{16.4} \.{\lor} \.{\land} senderState \.{\neq} S\_Waiting}%
 \@x{\@s{27.51} \.{\land} Discard ( m )}%
- \@x{\@s{27.51} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
- notaryVars {\rangle}}%
+ \@x{\@s{27.51} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, connectorVars
+ ,\, ledgerVars {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -511,18 +594,17 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 }%
 \@xx{}%
 \@x{ SenderHandleAbortNotify ( i ,\, j ,\, m ) \.{\defeq}}%
- \@x{\@s{16.4} \.{\LET} isSenderWaiting \.{\defeq} \.{\lor} senderState \.{=}
- S\_Waiting}%
-\@x{\@s{128.27} \.{\lor} senderState \.{=} S\_Ready}%
+ \@x{\@s{16.4} \.{\LET} isSenderWaiting \.{\defeq} senderState \.{\in} \{
+ S\_ProposalWaiting ,\, S\_Waiting ,\, S\_Ready \}}%
 \@x{\@s{16.4} \.{\IN} \.{\lor} \.{\land} isSenderWaiting}%
 \@x{\@s{47.91} \.{\land} senderState \.{'} \.{=} S\_Done}%
 \@x{\@s{47.91} \.{\land} Discard ( m )}%
- \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} ledgerVars ,\, notaryVars
- {\rangle}}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} ledgerVars ,\, connectorVars
+ ,\, senderProposalResponses {\rangle}}%
 \@x{\@s{36.79} \.{\lor} \.{\land} {\lnot} isSenderWaiting}%
 \@x{\@s{47.91} \.{\land} Discard ( m )}%
- \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
- notaryVars {\rangle}}%
+ \@x{\@s{47.91} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, connectorVars
+ ,\, ledgerVars {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -530,6 +612,9 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 }%
 \@xx{}%
 \@x{ SenderReceive ( i ,\, j ,\, m ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\lor} \.{\land} m . mtype \.{=} SubpaymentProposalResponse}%
+ \@x{\@s{27.51} \.{\land} SenderHandleSubpaymentProposalResponse ( i ,\, j ,\,
+ m )}%
 \@x{\@s{16.4} \.{\lor} \.{\land} m . mtype \.{=} ExecuteNotify}%
 \@x{\@s{27.51} \.{\land} SenderHandleExecuteNotify ( i ,\, j ,\, m )}%
 \@x{\@s{16.4} \.{\lor} \.{\land} m . mtype \.{=} AbortNotify}%
@@ -541,13 +626,13 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 }%
 \@xx{}%
 \@x{ RecipientHandlePrepareNotify ( i ,\, j ,\, m ) \.{\defeq}}%
- \@x{\@s{16.4} \.{\land} Reply ( [ mtype\@s{12.29} \.{\mapsto}
- SubmitReceiptRequest ,\,}%
-\@x{\@s{58.96} msource\@s{2.71} \.{\mapsto} i ,\,}%
-\@x{\@s{58.96} mdest\@s{12.35} \.{\mapsto} Notary ,\,}%
-\@x{\@s{58.96} mreceipt\@s{1.49} \.{\mapsto} R\_ReceiptSignature ] ,\, m )}%
- \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
- notaryVars {\rangle}}%
+ \@x{\@s{16.4} \.{\lor} \.{\land} Reply ( [ mtype\@s{12.29} \.{\mapsto}
+ ExecuteRequest ,\,}%
+\@x{\@s{70.07} msource\@s{2.71} \.{\mapsto} i ,\,}%
+\@x{\@s{70.07} mdest\@s{12.35} \.{\mapsto} i \.{-} 1 ,\,}%
+\@x{\@s{70.07} mreceipt\@s{1.49} \.{\mapsto} R\_ReceiptSignature ] ,\, m )}%
+ \@x{\@s{27.51} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, connectorVars
+ ,\, ledgerVars {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -555,8 +640,23 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 }%
 \@xx{}%
 \@x{ RecipientReceive ( i ,\, j ,\, m ) \.{\defeq}}%
-\@x{\@s{16.4} \.{\land} m . mtype \.{=} PrepareNotify}%
-\@x{\@s{16.4} \.{\land} RecipientHandlePrepareNotify ( i ,\, j ,\, m )}%
+\@x{\@s{16.4} \.{\lor} \.{\land} m . mtype \.{=} PrepareNotify}%
+\@x{\@s{27.51} \.{\land} RecipientHandlePrepareNotify ( i ,\, j ,\, m )}%
+\@pvspace{8.0pt}%
+\@x{}%
+\@y{\@s{0}%
+ Connector \ensuremath{i} receives a \ensuremath{SubpaymentProposal} request
+}%
+\@xx{}%
+\@x{ ConnectorHandleSubpaymentProposalRequest ( i ,\, j ,\, m ) \.{\defeq}}%
+ \@x{\@s{16.4} \.{\land} connectorState \.{'} \.{=} [ connectorState {\EXCEPT}
+ {\bang} [ i ] \.{=} C\_Proposed ]}%
+ \@x{\@s{16.4} \.{\land} Reply ( [ mtype\@s{13.68} \.{\mapsto}
+ SubpaymentProposalResponse ,\,}%
+\@x{\@s{58.96} msource\@s{4.1} \.{\mapsto} i ,\,}%
+\@x{\@s{58.96} mdest\@s{13.74} \.{\mapsto} j ] ,\, m )}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars
+ {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -565,12 +665,12 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 }%
 \@xx{}%
 \@x{ ConnectorHandlePrepareNotify ( i ,\, j ,\, m ) \.{\defeq}}%
- \@x{\@s{16.4} \.{\land} Reply ( [ mtype\@s{9.58} \.{\mapsto} PrepareRequest
- ,\,}%
-\@x{\@s{58.96} msource \.{\mapsto} i ,\,}%
-\@x{\@s{58.96} mdest\@s{9.64} \.{\mapsto} i \.{+} 1 ] ,\, m )}%
- \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
- notaryVars {\rangle}}%
+ \@x{\@s{16.4} \.{\lor} \.{\land} Reply ( [ mtype\@s{9.58} \.{\mapsto}
+ PrepareRequest ,\,}%
+\@x{\@s{70.07} msource \.{\mapsto} i ,\,}%
+\@x{\@s{70.07} mdest\@s{9.64} \.{\mapsto} i \.{+} 1 ] ,\, m )}%
+ \@x{\@s{27.51} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, connectorVars
+ ,\, ledgerVars {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -579,12 +679,13 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 }%
 \@xx{}%
 \@x{ ConnectorHandleExecuteNotify ( i ,\, j ,\, m ) \.{\defeq}}%
- \@x{\@s{16.4} \.{\land} Reply ( [ mtype\@s{9.58} \.{\mapsto} ExecuteRequest
+ \@x{\@s{16.4} \.{\land} Reply ( [ mtype\@s{12.29} \.{\mapsto} ExecuteRequest
  ,\,}%
-\@x{\@s{58.96} msource \.{\mapsto} i ,\,}%
-\@x{\@s{58.96} mdest\@s{9.64} \.{\mapsto} i \.{-} 1 ] ,\, m )}%
- \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
- notaryVars {\rangle}}%
+\@x{\@s{58.96} msource\@s{2.71} \.{\mapsto} i ,\,}%
+\@x{\@s{58.96} mdest\@s{12.35} \.{\mapsto} i \.{-} 1 ,\,}%
+\@x{\@s{58.96} mreceipt\@s{1.49} \.{\mapsto} m . mreceipt ] ,\, m )}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, connectorVars
+ ,\, ledgerVars {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -594,8 +695,8 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@xx{}%
 \@x{ ConnectorHandleAbortNotify ( i ,\, j ,\, m ) \.{\defeq}}%
 \@x{\@s{16.4} \.{\land} Discard ( m )}%
- \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
- notaryVars {\rangle}}%
+ \@x{\@s{16.4} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, connectorVars
+ ,\, ledgerVars {\rangle}}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -603,42 +704,15 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 }%
 \@xx{}%
 \@x{ ConnectorReceive ( i ,\, j ,\, m ) \.{\defeq}}%
+\@x{\@s{16.4} \.{\lor} \.{\land} m . mtype \.{=} SubpaymentProposalRequest}%
+ \@x{\@s{27.51} \.{\land} ConnectorHandleSubpaymentProposalRequest ( i ,\, j
+ ,\, m )}%
 \@x{\@s{16.4} \.{\lor} \.{\land} m . mtype \.{=} PrepareNotify}%
 \@x{\@s{27.51} \.{\land} ConnectorHandlePrepareNotify ( i ,\, j ,\, m )}%
 \@x{\@s{16.4} \.{\lor} \.{\land} m . mtype \.{=} ExecuteNotify}%
 \@x{\@s{27.51} \.{\land} ConnectorHandleExecuteNotify ( i ,\, j ,\, m )}%
 \@x{\@s{16.4} \.{\lor} \.{\land} m . mtype \.{=} AbortNotify}%
 \@x{\@s{27.51} \.{\land} ConnectorHandleAbortNotify ( i ,\, j ,\, m )}%
-\@pvspace{8.0pt}%
-\@x{}%
-\@y{\@s{0}%
- Notary receives a signed receipt
-}%
-\@xx{}%
-\@x{ NotaryHandleSubmitReceiptRequest ( i ,\, j ,\, m ) \.{\defeq}}%
-\@x{\@s{16.4} \.{\lor} \.{\land} m . mreceipt \.{=} R\_ReceiptSignature}%
-\@x{\@s{27.51} \.{\land} notaryState \.{=} N\_Waiting}%
-\@x{\@s{27.51} \.{\land} notaryState \.{'} \.{=} N\_Committed}%
-\@x{\@s{27.51} \.{\land} ReplyBroadcast (}%
-\@x{\@s{46.82} \{ [ mtype\@s{13.68} \.{\mapsto} ExecuteRequest ,\,}%
-\@x{\@s{54.59} msource\@s{4.1} \.{\mapsto} i ,\,}%
- \@x{\@s{54.59} mdest\@s{13.74} \.{\mapsto} k ] \.{:} k \.{\in} Ledger \} ,\,
- m )}%
- \@x{\@s{27.51} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars
- {\rangle}}%
-\@x{\@s{16.4} \.{\lor} \.{\land} notaryState \.{\neq} N\_Waiting}%
-\@x{\@s{27.51} \.{\land} Discard ( m )}%
- \@x{\@s{27.51} \.{\land} {\UNCHANGED} {\langle} senderVars ,\, ledgerVars ,\,
- notaryVars {\rangle}}%
-\@pvspace{8.0pt}%
-\@x{}%
-\@y{\@s{0}%
- Notary receives a message
-}%
-\@xx{}%
-\@x{ NotaryReceive ( i ,\, j ,\, m ) \.{\defeq}}%
-\@x{\@s{16.4} \.{\land} m . mtype \.{=} SubmitReceiptRequest}%
-\@x{\@s{16.4} \.{\land} NotaryHandleSubmitReceiptRequest ( i ,\, j ,\, m )}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -656,8 +730,6 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@x{\@s{47.91} \.{\land} RecipientReceive ( i ,\, j ,\, m )}%
 \@x{\@s{36.79} \.{\lor} \.{\land} i \.{\in} Connector}%
 \@x{\@s{47.91} \.{\land} ConnectorReceive ( i ,\, j ,\, m )}%
-\@x{\@s{36.79} \.{\lor} \.{\land} i \.{=} Notary}%
-\@x{\@s{47.91} \.{\land} NotaryReceive ( i ,\, j ,\, m )}%
 \@pvspace{8.0pt}%
 \@x{}%
 \@y{\@s{0}%
@@ -677,12 +749,17 @@ Formal Specification in TLA\ensuremath{\.{\mbox{}^+}} of the
 \@x{\@s{16.4} \.{\land} senderState \.{=} S\_Done}%
 \@x{\@s{16.4} \.{\land} {\UNCHANGED} vars}%
 \@pvspace{8.0pt}%
-\@x{ Next \.{\defeq} \.{\lor} Start ( Sender )}%
-\@x{\@s{39.83} \.{\lor} NotaryTimeout}%
- \@x{\@s{39.83} \.{\lor} \E\, l\@s{5.35} \.{\in} Ledger \.{:} LedgerAbort ( l
+ \@x{ Next \.{\defeq} \.{\lor} \.{\land} \.{\lor} StartProposalPhase ( Sender
  )}%
- \@x{\@s{39.83} \.{\lor} \E\, m \.{\in} {\DOMAIN} messages \.{:} Receive ( m
+\@x{\@s{62.05} \.{\lor} StartPreparationPhase ( Sender )}%
+ \@x{\@s{62.05} \.{\lor} \E\, l\@s{5.35} \.{\in} Ledger \.{:} LedgerAbort ( l
  )}%
+ \@x{\@s{62.05} \.{\lor} \E\, l\@s{5.35} \.{\in} Ledger \.{:} LedgerTimeout (
+ l )}%
+ \@x{\@s{62.05} \.{\lor} \E\, m \.{\in} {\DOMAIN} messages \.{:} Receive ( m
+ )}%
+\@x{\@s{62.05} \.{\lor} NothingHappens}%
+\@x{\@s{50.94} \.{\land} clock \.{'} \.{=} clock \.{+} 1}%
 \@x{\@s{39.83} \.{\lor} Termination}%
 \@pvspace{8.0pt}%
 \@x{}%

@@ -26,3 +26,4 @@ S bound on clock skew
 S(_, _) max clock skew for a specific pair of processes
 \delta t^{clk}_i clock skew for a specific connector
 o_i option price (fee) a specific transfer
+c_i cost to the connector
