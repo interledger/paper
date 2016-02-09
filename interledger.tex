@@ -13,10 +13,10 @@
 % the .sty file from the LaTeX source template, so that people can
 % more easily include the .sty file into an existing document.  Also
 % changed to more closely follow the style guidelines as represented
-% by the Word sample file. 
+% by the Word sample file.
 
 % Note that since 2010, USENIX does not require endnotes. If you want
-% foot of page notes, don't include the endnotes package in the 
+% foot of page notes, don't include the endnotes package in the
 % usepackage command, below.
 
 \documentclass[letterpaper,twocolumn,10pt]{article}
@@ -43,7 +43,7 @@ Unlike previous approaches, this protocol requires no global coordinating system
 
 \section{Introduction}
 
-Sending money today within any single payment system is relatively simple, fast and inexpensive. However, moving money between systems is cumbersome, slow and costly, if it is possible at all. 
+Sending money today within any single payment system is relatively simple, fast and inexpensive. However, moving money between systems is cumbersome, slow and costly, if it is possible at all.
 
 Digital payment systems use \textit{ledgers} to track accounts and balances and to enable local transfers between their users. Today, there are few \textit{connectors} facilitating payments between these ledgers and there are high barriers to entry for creating new connections. Connectors are not standardized and they must be trusted not to steal the sender's money.
 
@@ -78,7 +78,7 @@ A \textit{ledger} may be used to track anything of value---from currency or stoc
     \label{fig:three-bells}
 \end{figure}
 
-A \textit{connector} is a system that facilitates interledger payments by coordinating book transfers on multiple ledgers. Connectors can also translate between different protocols used by these ledgers. As illustrated in Figure \ref{fig:connector}, connector \textit{Chloe} accepts a transfer into her account on one ledger in exchange for a transfer out of her account on another ledger. 
+A \textit{connector} is a system that facilitates interledger payments by coordinating book transfers on multiple ledgers. Connectors can also translate between different protocols used by these ledgers. As illustrated in Figure \ref{fig:connector}, connector \textit{Chloe} accepts a transfer into her account on one ledger in exchange for a transfer out of her account on another ledger.
 
 \begin{figure}[ht]
     \centering
@@ -235,9 +235,9 @@ In the proposal phase, the sender $p_1$ notifies each connector $ \{ p_i \mid i 
 
 \subsubsection{Preparation}
 
-Unlike in a basic Two-Phase Commit, book transfers 
+Unlike in a basic Two-Phase Commit, book transfers
 $ \{ b_i \in B \mid i \in \mathbb{Z}^+ \land 1 < i < n \} $
-are prepared in sequence from $b_1$ to $b_{n-1}$. Each connector is only willing to escrow their funds if they know funds have already been escrowed for them. 
+are prepared in sequence from $b_1$ to $b_{n-1}$. Each connector is only willing to escrow their funds if they know funds have already been escrowed for them.
 
 The sender $p_1$ first authorizes and sends the instruction to prepare the first transfer $b_1$ on $\ell_1$. $p_1$ then requests that the first connector $p_2$ prepare $b_2$ on $\ell_2$. The connector $p_2$ is comfortable preparing $b_2$ because $b_1$ is prepared and the funds have been escrowed by $\ell_1$. Similarly, each connector $p_i$ prepares transfer $b_{i-1}$ once it is notified that $\ell_i$ has prepared $b_i$ and escrowed the corresponding funds.
 
@@ -248,7 +248,7 @@ Once the last book transfer $b_{n-1}$ has been prepared and the funds escrowed, 
 
 If $N$ agree that the \textit{R\_ReceiptSignature} was received in time, they submit it and a signed \textit{D\_Execute} message to all participants $P$. Each participant $ \{ p_i \in P \mid i \in \mathbb{Z}^+ \land 1 < i \leq n \} $ submits the \textit{R\_ReceiptSignature} and \textit{D\_Execute} message to $\ell_{i-1}$ to execute $b_{i-1}$ and claim the funds they are due.
 
-If $N$ agree that the payment timed out, they submit the a signed \textit{D\_Abort} message to $P$. Each participant $ \{ p_j \in P \mid j \in \mathbb{Z}^+ \land 1 \geq j < n \} $ submits the \textit{D\_Abort} message to $\ell_j$ and reclaims its escrowed funds. 
+If $N$ agree that the payment timed out, they submit the a signed \textit{D\_Abort} message to $P$. Each participant $ \{ p_j \in P \mid j \in \mathbb{Z}^+ \land 1 \geq j < n \} $ submits the \textit{D\_Abort} message to $\ell_j$ and reclaims its escrowed funds.
 
 
 \subsection{Correctness}
@@ -262,7 +262,7 @@ Given the assumptions in \cite{castro1999practical} we require no additional ass
 
 Safety means that if one non-faulty ledger transitions its transfer to the \textit{L\_Executed} state, then no non-faulty ledger will transition a transfer belonging to the same payment to the \textit{L\_Aborted} state and vice versa. If liveness also holds, all transfers will eventually be executed or all aborted.
 
-Given the safety of the consensus algorithm used by the notaries, 
+Given the safety of the consensus algorithm used by the notaries,
 % TODO add citation
 we know that all ledgers will only receive one of either: $f + 1$ \textit{D\_Execute}, or $f + 1$ \textit{D\_Abort} messages from notaries. A correct ledger only executes the transfer when it has received $f + 1$ \textit{D\_Execute} messages which precludes the possibility that any other correct ledger has aborted their transfer. Equally, a correct ledger only aborts the transfer when it has received $f + 1$ \textit{D\_Abort} messages which precludes the possibility that any other correct ledger has received $f + 1$ \textit{D\_Execute} messages and aborted their transfer.
 
@@ -312,10 +312,10 @@ The transfers $B$ are escrowed only on the condition of receiving the \textit{R\
 \forall e \in E : e = \textit{R\_ReceiptSignature}
 \end{equation}
 
-Instead of having a global timeout, each book transfer in $ \{ b_i \in B \mid i \in \mathbb{Z}^+ \land i < n \} $ has its own expiration time enforced by the ledger $\ell_i$. 
+Instead of having a global timeout, each book transfer in $ \{ b_i \in B \mid i \in \mathbb{Z}^+ \land i < n \} $ has its own expiration time enforced by the ledger $\ell_i$.
 After the last book transfer $b_{n-1}$ is prepared, the recipient $p_n$ signs the receipt and presents the \textit{R\_ReceiptSignature} directly to their ledger $\ell_{n-1}$. If it is before the transfer's expiration time $t_{n-1}$, $b_{n-1}$ will be executed immediately.
 
-Once $b_{n-1}$ is executed and the recipient $p_n$ is paid, connector $p_{n-1}$ has a very strong incentive to pass the \textit{R\_ReceiptSignature} back to $\ell_{n-2}$, as they have paid out money but have not yet been paid. When each connector $ \{ p_j \in P \mid j \in \mathbb{Z}^+ \land 1 < j < n \} $ learns of the execution of the book transfer $b_j$, they must get the \textit{R\_ReceiptSignature} from $\ell_j$ and submit it to $\ell_{j-1}$ to claim the money waiting in escrow for them. 
+Once $b_{n-1}$ is executed and the recipient $p_n$ is paid, connector $p_{n-1}$ has a very strong incentive to pass the \textit{R\_ReceiptSignature} back to $\ell_{n-2}$, as they have paid out money but have not yet been paid. When each connector $ \{ p_j \in P \mid j \in \mathbb{Z}^+ \land 1 < j < n \} $ learns of the execution of the book transfer $b_j$, they must get the \textit{R\_ReceiptSignature} from $\ell_j$ and submit it to $\ell_{j-1}$ to claim the money waiting in escrow for them.
 
 Thus, the transfers in $B$ are executed in ``backwards'' order, from the recipient $p_n$ to the sender $p_1$. Once the first transfer $b_1$ is executed, the sender $p_1$ can get the \textit{R\_ReceiptSignature} from their ledger $\ell_1$.
 
