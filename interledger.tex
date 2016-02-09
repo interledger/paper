@@ -105,7 +105,7 @@ Ledger-provided escrow guarantees the sender that their funds will only be trans
     \label{fig:connector-execution}
 \end{figure}
 
-The simple arrangement illustrated here can be extended into arbitrarily long chains of connectors to facilitate payments between any sender and any recipient. This brings the the small-world network effect (commonly known as the ``six degrees of separation'') \cite{albert1999internet,watts1998collective} to payments and creates a global graph of liquidity or \mbox{\textit{Interledger}}.
+The simple arrangement illustrated here can be extended into arbitrarily long chains of connectors to facilitate payments between any sender and any recipient. This brings the small-world network effect (commonly known as the ``six degrees of separation'') \cite{albert1999internet,watts1998collective} to payments and creates a global graph of liquidity or \mbox{\textit{Interledger}}.
 
 \subsection{Byzantine and Rational Actors}
 
@@ -239,7 +239,7 @@ Unlike in a basic Two-Phase Commit, book transfers
 $ \{ b_i \in B \mid i \in \mathbb{Z}^+ \land 1 < i < n \} $
 are prepared in sequence from $b_1$ to $b_{n-1}$. Each connector is only willing to escrow their funds if they know funds have already been escrowed for them.
 
-The sender $p_1$ first authorizes and sends the instruction to prepare the first transfer $b_1$ on $\ell_1$. $p_1$ then requests that the first connector $p_2$ prepare $b_2$ on $\ell_2$. The connector $p_2$ is comfortable preparing $b_2$ because $b_1$ is prepared and the funds have been escrowed by $\ell_1$. Similarly, each connector $p_i$ prepares transfer $b_{i-1}$ once it is notified that $\ell_i$ has prepared $b_i$ and escrowed the corresponding funds.
+The sender $p_1$ first authorizes and sends the instruction to prepare the first transfer $b_1$ on $\ell_1$. $p_1$ then requests that the first connector $p_2$ prepare $b_2$ on $\ell_2$. The connector $p_2$ is comfortable preparing $b_2$ because $b_1$ is prepared and the funds have been escrowed by $\ell_1$. Similarly, each connector $p_i$ prepares transfer $b_i$ once it is notified that $\ell_{i-1}$ has prepared $b_{i-1}$ and escrowed the corresponding funds.
 
 
 \subsubsection{Execution}
